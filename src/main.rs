@@ -1,4 +1,9 @@
+extern crate turtle;
+
 use std::fmt;
+use std::fs::File;
+use turtle::{Canvas, Turtle};
+
 
 #[derive(Debug, Eq, PartialEq, Clone)]
 struct Character(char);
@@ -59,7 +64,23 @@ struct System {
 }
 
 impl System {
-    fn develop(&self, axiom: &SymbolString) -> (bool, SymbolString) {
+    fn develop(&self, axiom: SymbolString, iterations: usize) -> (SymbolString, usize) {
+        let mut n = 0;
+        let mut current = axiom; 
+        for _ in 0..iterations {
+            let (next, progress) = self.develop1(&current);
+            if progress {
+                n += 1;
+                current = next;
+            } else {
+                // XXX: next === current
+                break;
+            }
+        }
+        return (current, n);
+    }
+
+    fn develop1(&self, axiom: &SymbolString) -> (SymbolString, bool) {
         let mut expanded = Vec::new();
         let mut any_rule_applied = false;
 
@@ -78,7 +99,7 @@ impl System {
             }
         }
 
-        (any_rule_applied, SymbolString(expanded))
+        (SymbolString(expanded), any_rule_applied)
     }
 }
 
@@ -101,6 +122,22 @@ fn main() {
     println!("{:?}", system);
 
     println!("before: {:?}", axiom);
-    let apply = system.develop(&axiom);
-    println!("after:  {:?}", apply.1);
+    let (after, _iters) = system.develop(axiom, 5);
+    println!("after:  {:?}", after);
+
+    let angle = 60.0;
+    let distance = 10.0;
+    let mut t = Canvas::new();
+    t.pendown();
+    for sym in after.0.iter() {
+        match sym.character.0 {
+            'F' => t.forward(distance),
+            '+' => t.right(angle),
+            '-' => t.left(angle),
+            _   => {}
+        }
+    }
+    t.save_svg(&mut File::create("koch.svg").unwrap()).unwrap();
+
+
 }

@@ -2,3 +2,6 @@
 name = "lindenmayer-system"
 version = "0.1.0"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
+
+[dependencies.turtle]
+git = "https://github.com/mneumann/turtle-rs.git"
