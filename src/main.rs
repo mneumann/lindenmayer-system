@@ -64,9 +64,16 @@ struct System {
 }
 
 impl System {
-    fn develop(&self, axiom: SymbolString, iterations: usize) -> (SymbolString, usize) {
-        let mut n = 0;
-        let mut current = axiom; 
+    fn develop(&self, axiom: &SymbolString, iterations: usize) -> (SymbolString, usize) {
+
+        let (next, progress) = self.develop1(axiom);
+        if !progress {
+            return (next, 0);
+        }
+
+        let mut n = 1;
+        let mut current = next;
+
         for _ in 0..iterations {
             let (next, progress) = self.develop1(&current);
             if progress {
@@ -122,7 +129,7 @@ fn main() {
     println!("{:?}", system);
 
     println!("before: {:?}", axiom);
-    let (after, _iters) = system.develop(axiom, 5);
+    let (after, _iters) = system.develop(&axiom, 5);
     println!("after:  {:?}", after);
 
     let angle = 60.0;
@@ -138,6 +145,4 @@ fn main() {
         }
     }
     t.save_svg(&mut File::create("koch.svg").unwrap()).unwrap();
-
-
 }
