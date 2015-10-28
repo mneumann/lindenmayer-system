@@ -109,34 +109,14 @@ impl System {
         (SymbolString(expanded), any_rule_applied)
     }
 }
+fn sym(c: char) -> Symbol {
+    Symbol { character: Character(c) }
+}
 
-fn main() {
-    fn sym(c: char) -> Symbol {
-        Symbol { character: Character(c) }
-    }
-
-    let axiom = SymbolString::from_str("F++F++F");
-    let rule1 = Rule {
-        lhs: sym('F'),
-        rhs: SymbolString::from_str("F-F++F-F")
-    };
-
-    let mut rules = Vec::new();
-    rules.push(rule1);
-
-    let system = System { rules: rules };
-
-    println!("{:?}", system);
-
-    println!("before: {:?}", axiom);
-    let (after, _iters) = system.develop(&axiom, 5);
-    println!("after:  {:?}", after);
-
-    let angle = 60.0;
-    let distance = 10.0;
+fn draw(symstr: &SymbolString, angle: f32, distance: f32, filename: &str) {
     let mut t = Canvas::new();
     t.pendown();
-    for sym in after.0.iter() {
+    for sym in symstr.0.iter() {
         match sym.character.0 {
             'F' => t.forward(distance),
             '+' => t.right(angle),
@@ -144,5 +124,51 @@ fn main() {
             _   => {}
         }
     }
-    t.save_svg(&mut File::create("koch.svg").unwrap()).unwrap();
+    t.save_svg(&mut File::create(filename).unwrap()).unwrap();
+}  
+
+fn koch_curve(maxiter: usize) {
+    let axiom = SymbolString::from_str("F++F++F");
+
+    let system = System { rules: vec![
+        Rule {
+            lhs: sym('F'),
+            rhs: SymbolString::from_str("F-F++F-F")
+        }
+        ] };
+    println!("{:?}", system);
+
+    println!("before: {:?}", axiom);
+    let (after, _iters) = system.develop(&axiom, maxiter);
+    println!("after:  {:?}", after);
+
+    draw(&after, 60.0, 10.0, "koch.svg");
+}
+
+fn dragon_curve(maxiter: usize) {
+    let axiom = SymbolString::from_str("FX");
+
+    let system = System { rules: vec![
+        Rule {
+            lhs: sym('X'),
+            rhs: SymbolString::from_str("X+YF+")
+        },
+        Rule {
+            lhs: sym('Y'),
+            rhs: SymbolString::from_str("-FX-Y")
+        }
+        ] };
+    println!("{:?}", system);
+
+    println!("before: {:?}", axiom);
+    let (after, _iters) = system.develop(&axiom, maxiter);
+    println!("after:  {:?}", after);
+
+    draw(&after, 90.0, 10.0, "dragon.svg");
+}
+
+
+fn main() {
+    koch_curve(5);
+    dragon_curve(10);
 }
