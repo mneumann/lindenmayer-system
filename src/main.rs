@@ -64,27 +64,17 @@ struct System {
 }
 
 impl System {
-    fn develop(&self, axiom: &SymbolString, iterations: usize) -> (SymbolString, usize) {
+    fn develop(&self, axiom: SymbolString, iterations: usize) -> (SymbolString, usize) {
+        let mut current = axiom;
 
-        let (next, progress) = self.develop1(axiom);
-        if !progress {
-            return (next, 0);
-        }
-
-        let mut n = 1;
-        let mut current = next;
-
-        for _ in 0..iterations {
+        for iter in 0..iterations {
             let (next, progress) = self.develop1(&current);
-            if progress {
-                n += 1;
-                current = next;
-            } else {
-                // XXX: next === current
-                break;
+            if !progress {
+                return (current, iter);
             }
+            current = next;
         }
-        return (current, n);
+        return (current, iterations);
     }
 
     fn develop1(&self, axiom: &SymbolString) -> (SymbolString, bool) {
@@ -139,10 +129,10 @@ fn koch_curve(maxiter: usize) {
     println!("{:?}", system);
 
     println!("before: {:?}", axiom);
-    let (after, _iters) = system.develop(&axiom, maxiter);
+    let (after, iters) = system.develop(axiom, maxiter);
     println!("after:  {:?}", after);
 
-    draw(&after, 60.0, 10.0, "koch.svg");
+    draw(&after, 60.0, 10.0, &format!("koch_{:02}.svg", iters));
 }
 
 fn dragon_curve(maxiter: usize) {
@@ -161,14 +151,18 @@ fn dragon_curve(maxiter: usize) {
     println!("{:?}", system);
 
     println!("before: {:?}", axiom);
-    let (after, _iters) = system.develop(&axiom, maxiter);
+    let (after, iters) = system.develop(axiom, maxiter);
     println!("after:  {:?}", after);
 
-    draw(&after, 90.0, 10.0, "dragon.svg");
+    draw(&after, 90.0, 10.0, &format!("dragon_{:02}.svg", iters));
 }
 
 
 fn main() {
-    koch_curve(5);
-    dragon_curve(10);
+    for i in 0..7 {
+        koch_curve(i);
+    }
+    for i in 0..16 {
+        dragon_curve(i);
+    }
 }
