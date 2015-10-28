@@ -31,6 +31,12 @@ impl fmt::Debug for SymbolString {
     }
 }
 
+impl SymbolString {
+    fn from_str(s: &str) -> SymbolString {
+        SymbolString(s.chars().filter(|&c| !c.is_whitespace()).map(|c| Symbol{character: Character(c)}).collect())
+    }
+}
+
 #[derive(Debug)]
 struct Rule {
     lhs: Symbol,
@@ -81,12 +87,10 @@ fn main() {
         Symbol { character: Character(c) }
     }
 
-    let axiom = SymbolString(vec![sym('F'), sym('+'), sym('+'), sym('F'), sym('+'), sym('+'),
-                                  sym('F')]);
+    let axiom = SymbolString::from_str("F++F++F");
     let rule1 = Rule {
         lhs: sym('F'),
-        rhs: SymbolString(vec![sym('F'), sym('-'), sym('F'), sym('+'), sym('+'), sym('F'),
-                               sym('-'), sym('F')]),
+        rhs: SymbolString::from_str("F-F++F-F")
     };
 
     let mut rules = Vec::new();
