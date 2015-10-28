@@ -133,7 +133,7 @@ fn koch_curve(maxiter: usize) {
 
     let (after, iters) = system.develop(axiom, maxiter);
 
-    draw(&after, 0.0, 60.0, 10.0, &format!("koch_{:02}.svg", iters));
+    draw(&after, -90.0, 60.0, 10.0, &format!("koch_{:02}.svg", iters));
 }
 
 fn dragon_curve(maxiter: usize) {
@@ -153,7 +153,7 @@ fn dragon_curve(maxiter: usize) {
 
     let (after, iters) = system.develop(axiom, maxiter);
 
-    draw(&after, -90.0, 90.0, 10.0, &format!("dragon_{:02}.svg", iters));
+    draw(&after, 0.0, 90.0, 10.0, &format!("dragon_{:02}.svg", iters));
 }
 
 fn sierpinski_triangle(maxiter: usize) {
@@ -186,7 +186,7 @@ fn sierpinski_triangle(maxiter: usize) {
         ] };
     let (after, _iters) = system.develop1(&after);
 
-    draw(&after, 0.0, 60.0, 10.0, &format!("sierpinski_{:02}.svg", iters));
+    draw(&after, -90.0, 60.0, 10.0, &format!("sierpinski_{:02}.svg", iters));
 }
 
 fn fractal_plant(maxiter: usize) {
@@ -206,7 +206,7 @@ fn fractal_plant(maxiter: usize) {
 
     let (after, iters) = system.develop(axiom, maxiter);
 
-    draw(&after, -90.0, 25.0, 10.0, &format!("plant_{:02}.svg", iters));
+    draw(&after, 0.0, 25.0, 10.0, &format!("plant_{:02}.svg", iters));
 }
 
 fn main() {
