@@ -1,3 +1,5 @@
+#![feature(box_syntax)]
+
 extern crate turtle;
 
 use std::fmt;
@@ -6,9 +8,75 @@ use turtle::{Canvas, Turtle};
 
 trait Alphabet: fmt::Debug + Eq + PartialEq + Clone  {}
 
+type NumType = f32;
+
+#[derive(Debug, Clone)]
+enum Expr {
+    // References an actual Argument by position
+    Var(usize),
+    Const(NumType),
+    Add(Box<Expr>, Box<Expr>),
+    Sub(Box<Expr>, Box<Expr>),
+    Mul(Box<Expr>, Box<Expr>),
+    Div(Box<Expr>, Box<Expr>),
+}
+
+struct Argument(pub NumType);
+
+impl Expr {
+    // XXX: Do we need those checks?
+    fn evaluate(&self, args: &[Argument]) -> Result<NumType, &'static str> {
+        match *self {
+            Expr::Var(n) => Ok(try!(args.get(n).ok_or("Parameter out of bound")).0),
+            Expr::Const(c) => Ok(c),
+            Expr::Add(ref e1, ref e2) => Ok(try!(e1.evaluate(args)) + try!(e2.evaluate(args))),
+            Expr::Sub(ref e1, ref e2) => Ok(try!(e1.evaluate(args)) - try!(e2.evaluate(args))),
+            Expr::Mul(ref e1, ref e2) => Ok(try!(e1.evaluate(args)) * try!(e2.evaluate(args))),
+            Expr::Div(ref e1, ref e2) => {
+                let a = try!(e1.evaluate(args));
+                let b = try!(e2.evaluate(args));
+            if b == 0.0 {
+                return Err("Division by 0");
+                }
+                Ok(a / b)
+            }
+        }
+    }
+
+    //fn max_argument()
+}
+
+#[test]
+fn test_expr() {
+    use Expr::{Var, Const, Add, Sub, Mul, Div};
+    let expr = Sub(box Const(0.0), box Div(box Mul(box Add(box Const(1.0), box Var(0)), box Var(1)), box Const(2.0)));
+
+    fn fun(a: NumType, b: NumType) -> NumType {
+        0.0 - ((1.0 + a) * b) / 2.0
+    }
+
+    fn check(expr: &Expr, a: NumType, b: NumType) {
+        assert_eq!(Ok(fun(a, b)), expr.evaluate(&[Argument(a), Argument(b)]))
+    }
+
+    check(&expr, 123.0, 4444.0);
+    check(&expr, 0.0, -12.0);
+}
+
+// XXX: Clone?
 #[derive(Clone)]
 struct Symbol<A:Alphabet> {
     character: A,
+    parameters: Vec<Expr>
+}
+
+impl<A:Alphabet> Symbol<A> {
+    fn new(character: A) -> Symbol<A> {
+        Symbol {
+            character: character,
+            parameters: Vec::new(),
+        }
+    }
 }
 
 struct Parameters;
@@ -116,7 +184,7 @@ impl fmt::Debug for Character {
 }
 
 fn symstr_from_str(s: &str) -> SymbolString<Character> {
-    SymbolString(s.chars().filter(|&c| !c.is_whitespace()).map(|c| Symbol{character: Character(c)}).collect())
+    SymbolString(s.chars().filter(|&c| !c.is_whitespace()).map(|c| Symbol::new(Character(c))).collect())
 }
 
 fn draw(symstr: &SymbolString<Character>, init_direction: f32, angle: f32, distance: f32, filename: &str) {
