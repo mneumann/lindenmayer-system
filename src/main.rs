@@ -1,3 +1,7 @@
+
+// SymbolExpr
+// abstract over Argument
+
 #![feature(box_syntax)]
 
 extern crate turtle;
@@ -148,6 +152,7 @@ fn test_condition() {
 
 
 /// A symbol contains actual parameters.
+#[derive(Clone)]
 struct Symbol<A: Alphabet> {
     character: A,
     arguments: Vec<Argument>,
@@ -215,6 +220,7 @@ impl<A:Alphabet> ParameterizedSymbol<A> {
 }
 
 
+// XXX: ParametricWord?
 impl<A:Alphabet> Symbol<A> {
     fn new(character: A) -> Symbol<A> {
         Symbol {
@@ -225,7 +231,6 @@ impl<A:Alphabet> Symbol<A> {
 }
 
 // XXX: Rename SymbolString to Word
-#[derive(Clone)]
 struct SymbolString<A: Alphabet>(Vec<Symbol<A>>);
 
 impl<A:Alphabet> fmt::Debug for SymbolString<A> {
@@ -247,7 +252,6 @@ struct Rule<A: Alphabet> {
     character: A,
     arity: usize, // the number of parameters required by this rule.
     condition: Condition,
-
     production: Vec<ParameterizedSymbol<A>>,
 }
 
@@ -343,6 +347,14 @@ fn simple_rule(c: char, production: &str) -> Rule<Character> {
     }
 }
 
+fn psym(c: char, exprs: Vec<Expr>) -> ParameterizedSymbol<Character> {
+    ParameterizedSymbol {
+        character: Character(c),
+        expressions: exprs
+    }
+}
+
+
 fn draw(symstr: &SymbolString<Character>,
         init_direction: f32,
         angle: f32,
@@ -353,8 +365,9 @@ fn draw(symstr: &SymbolString<Character>,
     for sym in symstr.0.iter() {
         match sym.character.0 {
             'F' => t.forward(distance),
-            '+' => t.right(angle),
-            '-' => t.left(angle),
+            'f' => t.move_forward(distance),
+            '+' => t.left(angle),
+            '-' => t.right(angle),
             '[' => t.push(),
             ']' => t.pop(),
             _ => {}
@@ -362,6 +375,28 @@ fn draw(symstr: &SymbolString<Character>,
     }
     t.save_svg(&mut File::create(filename).unwrap()).unwrap();
 }
+
+fn draw_parametric(symstr: &SymbolString<Character>,
+        default_angle: f32,
+        filename: &str) {
+    let mut t = Canvas::new();
+    for sym in symstr.0.iter() {
+        match (sym.character.0, sym.arguments.get(0).map(|a| a.0)) {
+            ('F', Some(d)) => t.forward(d),
+            ('f', Some(d)) => t.move_forward(d),
+            ('+', Some(a)) => t.rotate(a),
+            ('+', None) => t.rotate(default_angle),
+            ('-', Some(a)) => t.rotate(-a),
+            ('-', None) => t.rotate(-default_angle),
+            ('[', None) => t.push(),
+            (']', None) => t.pop(),
+            _ => {}
+        }
+    }
+    t.save_svg(&mut File::create(filename).unwrap()).unwrap();
+}
+
+
 
 fn koch_curve(maxiter: usize) {
     let axiom = symstr_from_str("F++F++F");
@@ -425,6 +460,38 @@ fn fractal_plant(maxiter: usize) {
     draw(&after, 0.0, 25.0, 10.0, &format!("plant_{:02}.svg", iters));
 }
 
+fn branching_pattern_abop_1_9(maxiter: usize) {
+    const R: NumType = 1.456;
+    let axiom = SymbolString(vec![Symbol{character: Character('A'), arguments: vec![Argument(300.0)]}]);
+
+    let system = System {
+        rules: vec![
+                Rule{
+                        character: Character('A'),
+                        arity: 1,
+                        condition: Condition::True,
+                        production: vec![
+                                psym('F', vec![Expr::Arg(0)]),
+                                psym('[', vec![]),
+                                psym('+', vec![]),
+                                psym('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
+                                psym(']', vec![]),
+                                psym('[', vec![]),
+                                psym('-', vec![]),
+                                psym('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
+                                psym(']', vec![]),
+                        ]
+                }
+        ]
+    };
+    println!("{:?}", system);
+
+    let (after, iters) = system.develop(axiom, maxiter);
+
+    draw_parametric(&after, 85.0, &format!("branching_abop_1_9_{:02}.svg", iters));
+}
+
+
 fn main() {
     for i in 0..7 {
         koch_curve(i);
@@ -438,4 +505,5 @@ fn main() {
     for i in 4..8 {
         fractal_plant(i);
     }
+    branching_pattern_abop_1_9(15);
 }
