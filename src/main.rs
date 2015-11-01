@@ -13,6 +13,19 @@ struct Symbol {
     character: Character,
 }
 
+struct Parameters;
+
+impl Symbol {
+    fn matches(&self, other: &Symbol) -> Option<Parameters> {
+        if self.character == other.character {
+            Some(Parameters)
+        }
+        else {
+            None
+        }
+    }
+}
+
 impl fmt::Debug for Symbol {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.character.0)
@@ -40,6 +53,11 @@ impl SymbolString {
     fn from_str(s: &str) -> SymbolString {
         SymbolString(s.chars().filter(|&c| !c.is_whitespace()).map(|c| Symbol{character: Character(c)}).collect())
     }
+
+    // XXX: Evaluate Parameters
+    fn evaluate(&self, _parameters: Parameters) -> SymbolString {
+        self.clone()
+    }
 }
 
 #[derive(Debug)]
@@ -50,11 +68,7 @@ struct Rule {
 
 impl Rule {
     fn produce(&self, sym: &Symbol) -> Option<SymbolString> {
-        if self.lhs.eq(sym) {
-            Some(self.rhs.clone())
-        } else {
-            None
-        }
+        self.lhs.matches(sym).map(|parameters| self.rhs.evaluate(parameters))
     }
 }
 
