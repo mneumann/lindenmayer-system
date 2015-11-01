@@ -13,11 +13,19 @@ type NumType = f32;
 /// An argument is an "actual" parameter.
 struct Argument(pub NumType);
 
+#[derive(Debug, Eq, PartialEq)]
+enum ExprError {
+    /// In case of division by zero.
+    DivByZero,
+    /// When the argument position `n` in Arg(n) is out of bounds.
+    InvalidArg,
+}
+
 /// An expression evaluates to a numeric value of `NumType`.
 #[derive(Debug, Clone)]
 enum Expr {
     // References an actual Argument by position
-    Var(usize),
+    Arg(usize),
     Const(NumType),
     Add(Box<Expr>, Box<Expr>),
     Sub(Box<Expr>, Box<Expr>),
@@ -28,9 +36,9 @@ enum Expr {
 
 impl Expr {
     // XXX: Do we need those checks?
-    fn evaluate(&self, args: &[Argument]) -> Result<NumType, &'static str> {
+    fn evaluate(&self, args: &[Argument]) -> Result<NumType, ExprError> {
         match *self {
-            Expr::Var(n) => Ok(try!(args.get(n).ok_or("Parameter out of bound")).0),
+            Expr::Arg(n) => Ok(try!(args.get(n).ok_or(ExprError::InvalidArg)).0),
             Expr::Const(c) => Ok(c),
             Expr::Add(ref e1, ref e2) => Ok(try!(e1.evaluate(args)) + try!(e2.evaluate(args))),
             Expr::Sub(ref e1, ref e2) => Ok(try!(e1.evaluate(args)) - try!(e2.evaluate(args))),
@@ -38,8 +46,8 @@ impl Expr {
             Expr::Div(ref e1, ref e2) => {
                 let a = try!(e1.evaluate(args));
                 let b = try!(e2.evaluate(args));
-            if b == 0.0 {
-                return Err("Division by 0");
+                if b == 0.0 {
+                   return Err(ExprError::DivByZero);
                 }
                 Ok(a / b)
             }
@@ -66,7 +74,7 @@ enum Condition {
 
 impl Condition {
     // XXX: Do we need those checks?
-    fn evaluate(&self, args: &[Argument]) -> Result<bool, &'static str> {
+    fn evaluate(&self, args: &[Argument]) -> Result<bool, ExprError> {
         Ok(match *self {
             Condition::Not(ref c) => ! try!(c.evaluate(args)),
             Condition::And(ref c1, ref c2) => try!(c1.evaluate(args)) && try!(c2.evaluate(args)),
@@ -84,8 +92,8 @@ impl Condition {
 
 #[test]
 fn test_expr() {
-    use Expr::{Var, Const, Add, Sub, Mul, Div};
-    let expr = Sub(box Const(0.0), box Div(box Mul(box Add(box Const(1.0), box Var(0)), box Var(1)), box Const(2.0)));
+    use Expr::{Arg, Const, Add, Sub, Mul, Div};
+    let expr = Sub(box Const(0.0), box Div(box Mul(box Add(box Const(1.0), box Arg(0)), box Arg(1)), box Const(2.0)));
 
     fn fun(a: NumType, b: NumType) -> NumType {
         0.0 - ((1.0 + a) * b) / 2.0
@@ -101,9 +109,9 @@ fn test_expr() {
 
 #[test]
 fn test_condition() {
-    use Expr::{Var, Const, Add, Sub, Mul, Div};
+    use Expr::{Arg, Const, Add, Sub, Mul, Div};
     use Condition::{Not, And, Greater};
-    let cond = Greater(box Var(0), box Const(0.0));
+    let cond = Greater(box Arg(0), box Const(0.0));
 
     fn fun(a: NumType) -> bool {
         a > 0.0
