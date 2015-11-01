@@ -13,20 +13,6 @@ struct Symbol<A:Alphabet> {
 
 struct Parameters;
 
-impl<A:Alphabet> Symbol<A> {
-    fn matches(&self, other: &Symbol<A>) -> Option<Parameters> {
-        if self.character == other.character {
-            // XXX: match condition. XXX move into rule
-            Some(Parameters)
-        }
-        else {
-            None
-        }
-    }
-}
-
-
-
 impl<A:Alphabet> fmt::Debug for Symbol<A> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.character)
@@ -61,13 +47,19 @@ impl<A:Alphabet> SymbolString<A> {
 
 #[derive(Debug)]
 struct Rule<A:Alphabet> {
-    lhs: Symbol<A>,
-    rhs: SymbolString<A>,
+    character: A,
+    production: SymbolString<A>,
 }
 
 impl<A:Alphabet> Rule<A> {
     fn produce(&self, sym: &Symbol<A>) -> Option<SymbolString<A>> {
-        self.lhs.matches(sym).map(|parameters| self.rhs.evaluate(parameters))
+        if sym.character == self.character {
+            // XXX: check if parameters match the conditions
+            let parameters = Parameters;
+            Some(self.production.evaluate(parameters))
+        } else {
+            None
+        }
     }
 }
 
@@ -123,13 +115,8 @@ impl fmt::Debug for Character {
     }
 }
 
-
 fn symstr_from_str(s: &str) -> SymbolString<Character> {
     SymbolString(s.chars().filter(|&c| !c.is_whitespace()).map(|c| Symbol{character: Character(c)}).collect())
-}
-
-fn sym(c: char) -> Symbol<Character> {
-    Symbol { character: Character(c) }
 }
 
 fn draw(symstr: &SymbolString<Character>, init_direction: f32, angle: f32, distance: f32, filename: &str) {
@@ -153,8 +140,8 @@ fn koch_curve(maxiter: usize) {
 
     let system = System { rules: vec![
         Rule {
-            lhs: sym('F'),
-            rhs: symstr_from_str("F-F++F-F")
+            character: Character('F'),
+            production: symstr_from_str("F-F++F-F")
         }
         ] };
     println!("{:?}", system);
@@ -169,12 +156,12 @@ fn dragon_curve(maxiter: usize) {
 
     let system = System { rules: vec![
         Rule {
-            lhs: sym('X'),
-            rhs: symstr_from_str("X+YF+")
+            character: Character('X'),
+            production: symstr_from_str("X+YF+")
         },
         Rule {
-            lhs: sym('Y'),
-            rhs: symstr_from_str("-FX-Y")
+            character: Character('Y'),
+            production: symstr_from_str("-FX-Y")
         }
         ] };
     println!("{:?}", system);
@@ -189,12 +176,12 @@ fn sierpinski_triangle(maxiter: usize) {
 
     let system = System { rules: vec![
         Rule {
-            lhs: sym('A'),
-            rhs: symstr_from_str("+B-A-B+")
+            character: Character('A'),
+            production: symstr_from_str("+B-A-B+")
         },
         Rule {
-            lhs: sym('B'),
-            rhs: symstr_from_str("-A+B+A-")
+            character: Character('B'),
+            production: symstr_from_str("-A+B+A-")
         }
         ] };
     println!("{:?}", system);
@@ -204,12 +191,12 @@ fn sierpinski_triangle(maxiter: usize) {
     // replace A and B with F
     let system = System { rules: vec![
         Rule {
-            lhs: sym('A'),
-            rhs: symstr_from_str("F")
+            character: Character('A'),
+            production: symstr_from_str("F")
         },
         Rule {
-            lhs: sym('B'),
-            rhs: symstr_from_str("F")
+            character: Character('B'),
+            production: symstr_from_str("F")
         }
         ] };
     let (after, _iters) = system.develop1(&after);
@@ -222,12 +209,12 @@ fn fractal_plant(maxiter: usize) {
 
     let system = System { rules: vec![
         Rule {
-            lhs: sym('X'),
-            rhs: symstr_from_str("F-[[X]+X]+F[+FX]-X")
+            character: Character('X'),
+            production: symstr_from_str("F-[[X]+X]+F[+FX]-X")
         },
         Rule {
-            lhs: sym('F'),
-            rhs: symstr_from_str("FF")
+            character: Character('F'),
+            production: symstr_from_str("FF")
         }
         ] };
     println!("{:?}", system);
