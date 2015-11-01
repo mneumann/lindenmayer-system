@@ -7,14 +7,14 @@ use turtle::{Canvas, Turtle};
 trait Alphabet: fmt::Debug + Eq + PartialEq + Clone  {}
 
 #[derive(Clone)]
-struct Symbol<C:Alphabet> {
-    character: C,
+struct Symbol<A:Alphabet> {
+    character: A,
 }
 
 struct Parameters;
 
-impl<C:Alphabet> Symbol<C> {
-    fn matches(&self, other: &Symbol<C>) -> Option<Parameters> {
+impl<A:Alphabet> Symbol<A> {
+    fn matches(&self, other: &Symbol<A>) -> Option<Parameters> {
         if self.character == other.character {
             // XXX: match condition. XXX move into rule
             Some(Parameters)
@@ -27,7 +27,7 @@ impl<C:Alphabet> Symbol<C> {
 
 
 
-impl<C:Alphabet> fmt::Debug for Symbol<C> {
+impl<A:Alphabet> fmt::Debug for Symbol<A> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{:?}", self.character)
     }
@@ -35,9 +35,9 @@ impl<C:Alphabet> fmt::Debug for Symbol<C> {
 
 // XXX: Rename SymbolString to Word
 #[derive(Clone)]
-struct SymbolString<C:Alphabet>(Vec<Symbol<C>>);
+struct SymbolString<A:Alphabet>(Vec<Symbol<A>>);
 
-impl<C:Alphabet> fmt::Debug for SymbolString<C> {
+impl<A:Alphabet> fmt::Debug for SymbolString<A> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let v = &self.0;
         try!(write!(f, "\""));
@@ -51,33 +51,33 @@ impl<C:Alphabet> fmt::Debug for SymbolString<C> {
     }
 }
 
-impl<C:Alphabet> SymbolString<C> {
+impl<A:Alphabet> SymbolString<A> {
     // XXX: Evaluate Parameters
-    fn evaluate(&self, _parameters: Parameters) -> SymbolString<C> {
+    fn evaluate(&self, _parameters: Parameters) -> SymbolString<A> {
         self.clone()
     }
 }
 
 
 #[derive(Debug)]
-struct Rule<C:Alphabet> {
-    lhs: Symbol<C>,
-    rhs: SymbolString<C>,
+struct Rule<A:Alphabet> {
+    lhs: Symbol<A>,
+    rhs: SymbolString<A>,
 }
 
-impl<C:Alphabet> Rule<C> {
-    fn produce(&self, sym: &Symbol<C>) -> Option<SymbolString<C>> {
+impl<A:Alphabet> Rule<A> {
+    fn produce(&self, sym: &Symbol<A>) -> Option<SymbolString<A>> {
         self.lhs.matches(sym).map(|parameters| self.rhs.evaluate(parameters))
     }
 }
 
 #[derive(Debug)]
-struct System<C:Alphabet> {
-    rules: Vec<Rule<C>>,
+struct System<A:Alphabet> {
+    rules: Vec<Rule<A>>,
 }
 
-impl<C:Alphabet> System<C> {
-    fn develop(&self, axiom: SymbolString<C>, iterations: usize) -> (SymbolString<C>, usize) {
+impl<A:Alphabet> System<A> {
+    fn develop(&self, axiom: SymbolString<A>, iterations: usize) -> (SymbolString<A>, usize) {
         let mut current = axiom;
 
         for iter in 0..iterations {
@@ -90,7 +90,7 @@ impl<C:Alphabet> System<C> {
         return (current, iterations);
     }
 
-    fn develop1(&self, axiom: &SymbolString<C>) -> (SymbolString<C>, bool) {
+    fn develop1(&self, axiom: &SymbolString<A>) -> (SymbolString<A>, bool) {
         let mut expanded = Vec::new();
         let mut any_rule_applied = false;
 
