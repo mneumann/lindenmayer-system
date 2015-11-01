@@ -6,12 +6,22 @@ use std::fmt;
 use std::fs::File;
 use turtle::{Canvas, Turtle};
 
-trait Alphabet: fmt::Debug + Eq + PartialEq + Clone  {}
+trait Alphabet: fmt::Debug + Eq + PartialEq + Clone {}
 
 type NumType = f32;
 
 /// An argument is an "actual" parameter.
+#[derive(Clone)]
 struct Argument(pub NumType);
+
+impl fmt::Debug for Argument {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self.0)
+    }
+}
+
+
+
 
 #[derive(Debug, Eq, PartialEq)]
 enum ExprError {
@@ -47,7 +57,7 @@ impl Expr {
                 let a = try!(e1.evaluate(args));
                 let b = try!(e2.evaluate(args));
                 if b == 0.0 {
-                   return Err(ExprError::DivByZero);
+                    return Err(ExprError::DivByZero);
                 }
                 Ok(a / b)
             }
@@ -58,6 +68,8 @@ impl Expr {
 /// A condition evaluates to either `true` or `false`.
 #[derive(Debug, Clone)]
 enum Condition {
+    True,
+    False,
     Not(Box<Condition>),
     And(Box<Condition>, Box<Condition>),
     Or(Box<Condition>, Box<Condition>),
@@ -76,14 +88,18 @@ impl Condition {
     // XXX: Do we need those checks?
     fn evaluate(&self, args: &[Argument]) -> Result<bool, ExprError> {
         Ok(match *self {
-            Condition::Not(ref c) => ! try!(c.evaluate(args)),
+            Condition::True => true,
+            Condition::False => false,
+            Condition::Not(ref c) => !try!(c.evaluate(args)),
             Condition::And(ref c1, ref c2) => try!(c1.evaluate(args)) && try!(c2.evaluate(args)),
             Condition::Or(ref c1, ref c2) => try!(c1.evaluate(args)) || try!(c2.evaluate(args)),
             Condition::Equal(ref e1, ref e2) => try!(e1.evaluate(args)) == try!(e2.evaluate(args)),
             Condition::Less(ref e1, ref e2) => try!(e1.evaluate(args)) < try!(e2.evaluate(args)),
             Condition::Greater(ref e1, ref e2) => try!(e1.evaluate(args)) > try!(e2.evaluate(args)),
-            Condition::LessEqual(ref e1, ref e2) => try!(e1.evaluate(args)) <= try!(e2.evaluate(args)),
-            Condition::GreaterEqual(ref e1, ref e2) => try!(e1.evaluate(args)) >= try!(e2.evaluate(args)),
+            Condition::LessEqual(ref e1, ref e2) =>
+                try!(e1.evaluate(args)) <= try!(e2.evaluate(args)),
+            Condition::GreaterEqual(ref e1, ref e2) =>
+                try!(e1.evaluate(args)) >= try!(e2.evaluate(args)),
         })
     }
 }
@@ -93,7 +109,9 @@ impl Condition {
 #[test]
 fn test_expr() {
     use Expr::{Arg, Const, Add, Sub, Mul, Div};
-    let expr = Sub(box Const(0.0), box Div(box Mul(box Add(box Const(1.0), box Arg(0)), box Arg(1)), box Const(2.0)));
+    let expr = Sub(box Const(0.0),
+                   box Div(box Mul(box Add(box Const(1.0), box Arg(0)), box Arg(1)),
+                           box Const(2.0)));
 
     fn fun(a: NumType, b: NumType) -> NumType {
         0.0 - ((1.0 + a) * b) / 2.0
@@ -124,36 +142,91 @@ fn test_condition() {
     check(&cond, 123.0);
     check(&cond, 0.0);
     check(&cond, -1.4);
+
+    assert_eq!(Ok(true), Condition::True.evaluate(&[]));
 }
 
 
-// XXX: Clone?
-#[derive(Clone)]
-struct Symbol<A:Alphabet> {
+/// A symbol contains actual parameters.
+struct Symbol<A: Alphabet> {
     character: A,
-    parameters: Vec<Expr>
+    arguments: Vec<Argument>,
 }
+
+impl<A:Alphabet> fmt::Debug for Symbol<A> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let res = write!(f, "{:?}", self.character);
+        if self.arguments.len() > 0 {
+            write!(f, "({:?}", self.arguments[0]);
+            for e in &self.arguments[1..] {
+                write!(f, ",{:?}", e);
+            }
+            write!(f, ")")
+        } else {
+            res
+        }
+    }
+}
+
+
+/// A parameterized symbol contains formal parameters, which can be
+/// evaluated to a Symbol given some actual parameters.
+struct ParameterizedSymbol<A: Alphabet> {
+    character: A,
+    expressions: Vec<Expr>,
+}
+
+
+impl<A:Alphabet> fmt::Debug for ParameterizedSymbol<A> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let res = write!(f, "{:?}", self.character);
+        if self.expressions.len() > 0 {
+            write!(f, "({:?}", self.expressions[0]);
+            for e in &self.expressions[1..] {
+                write!(f, ",{:?}", e);
+            }
+            write!(f, ")")
+        } else {
+            res
+        }
+    }
+}
+
+
+impl<A:Alphabet> ParameterizedSymbol<A> {
+    fn new(character: A) -> ParameterizedSymbol<A> {
+        ParameterizedSymbol {
+            character: character,
+            expressions: Vec::new(),
+        }
+    }
+    fn evaluate(&self, args: &[Argument]) -> Result<Symbol<A>, ExprError> {
+        let mut values = Vec::with_capacity(self.expressions.len());
+        for expr in self.expressions.iter() {
+            let arg = try!(expr.evaluate(args));
+            values.push(Argument(arg));
+        }
+        assert!(values.len() == self.expressions.len());
+        Ok(Symbol {
+            character: self.character.clone(),
+            arguments: values,
+        })
+    }
+}
+
 
 impl<A:Alphabet> Symbol<A> {
     fn new(character: A) -> Symbol<A> {
         Symbol {
             character: character,
-            parameters: Vec::new(),
+            arguments: Vec::new(),
         }
-    }
-}
-
-struct Parameters;
-
-impl<A:Alphabet> fmt::Debug for Symbol<A> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self.character)
     }
 }
 
 // XXX: Rename SymbolString to Word
 #[derive(Clone)]
-struct SymbolString<A:Alphabet>(Vec<Symbol<A>>);
+struct SymbolString<A: Alphabet>(Vec<Symbol<A>>);
 
 impl<A:Alphabet> fmt::Debug for SymbolString<A> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -169,26 +242,25 @@ impl<A:Alphabet> fmt::Debug for SymbolString<A> {
     }
 }
 
-impl<A:Alphabet> SymbolString<A> {
-    // XXX: Evaluate Parameters
-    fn evaluate(&self, _parameters: Parameters) -> SymbolString<A> {
-        self.clone()
-    }
-}
-
-
 #[derive(Debug)]
-struct Rule<A:Alphabet> {
+struct Rule<A: Alphabet> {
     character: A,
-    production: SymbolString<A>,
+    arity: usize, // the number of parameters required by this rule.
+    condition: Condition,
+
+    production: Vec<ParameterizedSymbol<A>>,
 }
 
 impl<A:Alphabet> Rule<A> {
     fn produce(&self, sym: &Symbol<A>) -> Option<SymbolString<A>> {
-        if sym.character == self.character {
-            // XXX: check if parameters match the conditions
-            let parameters = Parameters;
-            Some(self.production.evaluate(parameters))
+        let args = &sym.arguments[..];
+        if sym.character == self.character && args.len() == self.arity &&
+           self.condition.evaluate(args) == Ok(true) {
+            let res = SymbolString(self.production
+                                       .iter()
+                                       .map(|ps| ps.evaluate(args).unwrap() /* XXX */)
+                                       .collect());
+            Some(res)
         } else {
             None
         }
@@ -196,7 +268,7 @@ impl<A:Alphabet> Rule<A> {
 }
 
 #[derive(Debug)]
-struct System<A:Alphabet> {
+struct System<A: Alphabet> {
     rules: Vec<Rule<A>>,
 }
 
@@ -248,10 +320,34 @@ impl fmt::Debug for Character {
 }
 
 fn symstr_from_str(s: &str) -> SymbolString<Character> {
-    SymbolString(s.chars().filter(|&c| !c.is_whitespace()).map(|c| Symbol::new(Character(c))).collect())
+    SymbolString(s.chars()
+                  .filter(|&c| !c.is_whitespace())
+                  .map(|c| Symbol::new(Character(c)))
+                  .collect())
 }
 
-fn draw(symstr: &SymbolString<Character>, init_direction: f32, angle: f32, distance: f32, filename: &str) {
+fn production_from_str(s: &str) -> Vec<ParameterizedSymbol<Character>> {
+    s.chars()
+     .filter(|&c| !c.is_whitespace())
+     .map(|c| ParameterizedSymbol::new(Character(c)))
+     .collect()
+}
+
+/// A simple rule does not have any conditions nor parameters.
+fn simple_rule(c: char, production: &str) -> Rule<Character> {
+    Rule {
+        character: Character(c),
+        arity: 0,
+        condition: Condition::True,
+        production: production_from_str(production),
+    }
+}
+
+fn draw(symstr: &SymbolString<Character>,
+        init_direction: f32,
+        angle: f32,
+        distance: f32,
+        filename: &str) {
     let mut t = Canvas::new();
     t.right(init_direction);
     for sym in symstr.0.iter() {
@@ -261,21 +357,16 @@ fn draw(symstr: &SymbolString<Character>, init_direction: f32, angle: f32, dista
             '-' => t.left(angle),
             '[' => t.push(),
             ']' => t.pop(),
-            _   => {}
+            _ => {}
         }
     }
     t.save_svg(&mut File::create(filename).unwrap()).unwrap();
-}  
+}
 
 fn koch_curve(maxiter: usize) {
     let axiom = symstr_from_str("F++F++F");
 
-    let system = System { rules: vec![
-        Rule {
-            character: Character('F'),
-            production: symstr_from_str("F-F++F-F")
-        }
-        ] };
+    let system = System { rules: vec![simple_rule('F', "F-F++F-F")] };
     println!("{:?}", system);
 
     let (after, iters) = system.develop(axiom, maxiter);
@@ -286,16 +377,7 @@ fn koch_curve(maxiter: usize) {
 fn dragon_curve(maxiter: usize) {
     let axiom = symstr_from_str("FX");
 
-    let system = System { rules: vec![
-        Rule {
-            character: Character('X'),
-            production: symstr_from_str("X+YF+")
-        },
-        Rule {
-            character: Character('Y'),
-            production: symstr_from_str("-FX-Y")
-        }
-        ] };
+    let system = System { rules: vec![simple_rule('X', "X+YF+"), simple_rule('Y', "-FX-Y")] };
     println!("{:?}", system);
 
     let (after, iters) = system.develop(axiom, maxiter);
@@ -306,49 +388,36 @@ fn dragon_curve(maxiter: usize) {
 fn sierpinski_triangle(maxiter: usize) {
     let axiom = symstr_from_str("A");
 
-    let system = System { rules: vec![
-        Rule {
-            character: Character('A'),
-            production: symstr_from_str("+B-A-B+")
-        },
-        Rule {
-            character: Character('B'),
-            production: symstr_from_str("-A+B+A-")
-        }
-        ] };
+    let system = System { rules: vec![simple_rule('A', "+B-A-B+"), simple_rule('B', "-A+B+A-")] };
     println!("{:?}", system);
 
     let (after, iters) = system.develop(axiom, maxiter);
 
     // replace A and B with F
-    let system = System { rules: vec![
-        Rule {
-            character: Character('A'),
-            production: symstr_from_str("F")
-        },
-        Rule {
-            character: Character('B'),
-            production: symstr_from_str("F")
-        }
-        ] };
+    let system = System {
+        rules: vec![
+        simple_rule('A', "F"),
+        simple_rule('B', "F"),
+        ],
+    };
     let (after, _iters) = system.develop1(&after);
 
-    draw(&after, -90.0, 60.0, 10.0, &format!("sierpinski_{:02}.svg", iters));
+    draw(&after,
+         -90.0,
+         60.0,
+         10.0,
+         &format!("sierpinski_{:02}.svg", iters));
 }
 
 fn fractal_plant(maxiter: usize) {
     let axiom = symstr_from_str("X");
 
-    let system = System { rules: vec![
-        Rule {
-            character: Character('X'),
-            production: symstr_from_str("F-[[X]+X]+F[+FX]-X")
-        },
-        Rule {
-            character: Character('F'),
-            production: symstr_from_str("FF")
-        }
-        ] };
+    let system = System {
+        rules: vec![
+        simple_rule('X', "F-[[X]+X]+F[+FX]-X"),
+        simple_rule('F', "FF"),
+        ],
+    };
     println!("{:?}", system);
 
     let (after, iters) = system.develop(axiom, maxiter);
