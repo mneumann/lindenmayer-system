@@ -4,20 +4,19 @@ use std::fmt;
 use std::fs::File;
 use turtle::{Canvas, Turtle};
 
+trait Alphabet: fmt::Debug + Eq + PartialEq + Clone  {}
 
-#[derive(Debug, Eq, PartialEq, Clone)]
-struct Character(char);
-
-#[derive(Eq, PartialEq, Clone)]
-struct Symbol {
-    character: Character,
+#[derive(Clone)]
+struct Symbol<C:Alphabet> {
+    character: C,
 }
 
 struct Parameters;
 
-impl Symbol {
-    fn matches(&self, other: &Symbol) -> Option<Parameters> {
+impl<C:Alphabet> Symbol<C> {
+    fn matches(&self, other: &Symbol<C>) -> Option<Parameters> {
         if self.character == other.character {
+            // XXX: match condition. XXX move into rule
             Some(Parameters)
         }
         else {
@@ -26,16 +25,19 @@ impl Symbol {
     }
 }
 
-impl fmt::Debug for Symbol {
+
+
+impl<C:Alphabet> fmt::Debug for Symbol<C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.character.0)
+        write!(f, "{:?}", self.character)
     }
 }
 
+// XXX: Rename SymbolString to Word
 #[derive(Clone)]
-struct SymbolString(Vec<Symbol>);
+struct SymbolString<C:Alphabet>(Vec<Symbol<C>>);
 
-impl fmt::Debug for SymbolString {
+impl<C:Alphabet> fmt::Debug for SymbolString<C> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let v = &self.0;
         try!(write!(f, "\""));
@@ -49,36 +51,33 @@ impl fmt::Debug for SymbolString {
     }
 }
 
-impl SymbolString {
-    fn from_str(s: &str) -> SymbolString {
-        SymbolString(s.chars().filter(|&c| !c.is_whitespace()).map(|c| Symbol{character: Character(c)}).collect())
-    }
-
+impl<C:Alphabet> SymbolString<C> {
     // XXX: Evaluate Parameters
-    fn evaluate(&self, _parameters: Parameters) -> SymbolString {
+    fn evaluate(&self, _parameters: Parameters) -> SymbolString<C> {
         self.clone()
     }
 }
 
+
 #[derive(Debug)]
-struct Rule {
-    lhs: Symbol,
-    rhs: SymbolString,
+struct Rule<C:Alphabet> {
+    lhs: Symbol<C>,
+    rhs: SymbolString<C>,
 }
 
-impl Rule {
-    fn produce(&self, sym: &Symbol) -> Option<SymbolString> {
+impl<C:Alphabet> Rule<C> {
+    fn produce(&self, sym: &Symbol<C>) -> Option<SymbolString<C>> {
         self.lhs.matches(sym).map(|parameters| self.rhs.evaluate(parameters))
     }
 }
 
 #[derive(Debug)]
-struct System {
-    rules: Vec<Rule>,
+struct System<C:Alphabet> {
+    rules: Vec<Rule<C>>,
 }
 
-impl System {
-    fn develop(&self, axiom: SymbolString, iterations: usize) -> (SymbolString, usize) {
+impl<C:Alphabet> System<C> {
+    fn develop(&self, axiom: SymbolString<C>, iterations: usize) -> (SymbolString<C>, usize) {
         let mut current = axiom;
 
         for iter in 0..iterations {
@@ -91,7 +90,7 @@ impl System {
         return (current, iterations);
     }
 
-    fn develop1(&self, axiom: &SymbolString) -> (SymbolString, bool) {
+    fn develop1(&self, axiom: &SymbolString<C>) -> (SymbolString<C>, bool) {
         let mut expanded = Vec::new();
         let mut any_rule_applied = false;
 
@@ -113,11 +112,27 @@ impl System {
         (SymbolString(expanded), any_rule_applied)
     }
 }
-fn sym(c: char) -> Symbol {
+
+#[derive(Eq, PartialEq, Clone)]
+struct Character(char);
+impl Alphabet for Character {}
+
+impl fmt::Debug for Character {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.0)
+    }
+}
+
+
+fn symstr_from_str(s: &str) -> SymbolString<Character> {
+    SymbolString(s.chars().filter(|&c| !c.is_whitespace()).map(|c| Symbol{character: Character(c)}).collect())
+}
+
+fn sym(c: char) -> Symbol<Character> {
     Symbol { character: Character(c) }
 }
 
-fn draw(symstr: &SymbolString, init_direction: f32, angle: f32, distance: f32, filename: &str) {
+fn draw(symstr: &SymbolString<Character>, init_direction: f32, angle: f32, distance: f32, filename: &str) {
     let mut t = Canvas::new();
     t.right(init_direction);
     for sym in symstr.0.iter() {
@@ -134,12 +149,12 @@ fn draw(symstr: &SymbolString, init_direction: f32, angle: f32, distance: f32, f
 }  
 
 fn koch_curve(maxiter: usize) {
-    let axiom = SymbolString::from_str("F++F++F");
+    let axiom = symstr_from_str("F++F++F");
 
     let system = System { rules: vec![
         Rule {
             lhs: sym('F'),
-            rhs: SymbolString::from_str("F-F++F-F")
+            rhs: symstr_from_str("F-F++F-F")
         }
         ] };
     println!("{:?}", system);
@@ -150,16 +165,16 @@ fn koch_curve(maxiter: usize) {
 }
 
 fn dragon_curve(maxiter: usize) {
-    let axiom = SymbolString::from_str("FX");
+    let axiom = symstr_from_str("FX");
 
     let system = System { rules: vec![
         Rule {
             lhs: sym('X'),
-            rhs: SymbolString::from_str("X+YF+")
+            rhs: symstr_from_str("X+YF+")
         },
         Rule {
             lhs: sym('Y'),
-            rhs: SymbolString::from_str("-FX-Y")
+            rhs: symstr_from_str("-FX-Y")
         }
         ] };
     println!("{:?}", system);
@@ -170,16 +185,16 @@ fn dragon_curve(maxiter: usize) {
 }
 
 fn sierpinski_triangle(maxiter: usize) {
-    let axiom = SymbolString::from_str("A");
+    let axiom = symstr_from_str("A");
 
     let system = System { rules: vec![
         Rule {
             lhs: sym('A'),
-            rhs: SymbolString::from_str("+B-A-B+")
+            rhs: symstr_from_str("+B-A-B+")
         },
         Rule {
             lhs: sym('B'),
-            rhs: SymbolString::from_str("-A+B+A-")
+            rhs: symstr_from_str("-A+B+A-")
         }
         ] };
     println!("{:?}", system);
@@ -190,11 +205,11 @@ fn sierpinski_triangle(maxiter: usize) {
     let system = System { rules: vec![
         Rule {
             lhs: sym('A'),
-            rhs: SymbolString::from_str("F")
+            rhs: symstr_from_str("F")
         },
         Rule {
             lhs: sym('B'),
-            rhs: SymbolString::from_str("F")
+            rhs: symstr_from_str("F")
         }
         ] };
     let (after, _iters) = system.develop1(&after);
@@ -203,16 +218,16 @@ fn sierpinski_triangle(maxiter: usize) {
 }
 
 fn fractal_plant(maxiter: usize) {
-    let axiom = SymbolString::from_str("X");
+    let axiom = symstr_from_str("X");
 
     let system = System { rules: vec![
         Rule {
             lhs: sym('X'),
-            rhs: SymbolString::from_str("F-[[X]+X]+F[+FX]-X")
+            rhs: symstr_from_str("F-[[X]+X]+F[+FX]-X")
         },
         Rule {
             lhs: sym('F'),
-            rhs: SymbolString::from_str("FF")
+            rhs: symstr_from_str("FF")
         }
         ] };
     println!("{:?}", system);
