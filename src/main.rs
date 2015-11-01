@@ -10,6 +10,10 @@ trait Alphabet: fmt::Debug + Eq + PartialEq + Clone  {}
 
 type NumType = f32;
 
+/// An argument is an "actual" parameter.
+struct Argument(pub NumType);
+
+/// An expression evaluates to a numeric value of `NumType`.
 #[derive(Debug, Clone)]
 enum Expr {
     // References an actual Argument by position
@@ -21,7 +25,6 @@ enum Expr {
     Div(Box<Expr>, Box<Expr>),
 }
 
-struct Argument(pub NumType);
 
 impl Expr {
     // XXX: Do we need those checks?
@@ -42,9 +45,42 @@ impl Expr {
             }
         }
     }
-
-    //fn max_argument()
 }
+
+/// A condition evaluates to either `true` or `false`.
+#[derive(Debug, Clone)]
+enum Condition {
+    Not(Box<Condition>),
+    And(Box<Condition>, Box<Condition>),
+    Or(Box<Condition>, Box<Condition>),
+
+    /// If two expressions are equal
+    Equal(Box<Expr>, Box<Expr>),
+
+    Less(Box<Expr>, Box<Expr>),
+    Greater(Box<Expr>, Box<Expr>),
+
+    LessEqual(Box<Expr>, Box<Expr>),
+    GreaterEqual(Box<Expr>, Box<Expr>),
+}
+
+impl Condition {
+    // XXX: Do we need those checks?
+    fn evaluate(&self, args: &[Argument]) -> Result<bool, &'static str> {
+        Ok(match *self {
+            Condition::Not(ref c) => ! try!(c.evaluate(args)),
+            Condition::And(ref c1, ref c2) => try!(c1.evaluate(args)) && try!(c2.evaluate(args)),
+            Condition::Or(ref c1, ref c2) => try!(c1.evaluate(args)) || try!(c2.evaluate(args)),
+            Condition::Equal(ref e1, ref e2) => try!(e1.evaluate(args)) == try!(e2.evaluate(args)),
+            Condition::Less(ref e1, ref e2) => try!(e1.evaluate(args)) < try!(e2.evaluate(args)),
+            Condition::Greater(ref e1, ref e2) => try!(e1.evaluate(args)) > try!(e2.evaluate(args)),
+            Condition::LessEqual(ref e1, ref e2) => try!(e1.evaluate(args)) <= try!(e2.evaluate(args)),
+            Condition::GreaterEqual(ref e1, ref e2) => try!(e1.evaluate(args)) >= try!(e2.evaluate(args)),
+        })
+    }
+}
+
+
 
 #[test]
 fn test_expr() {
@@ -62,6 +98,26 @@ fn test_expr() {
     check(&expr, 123.0, 4444.0);
     check(&expr, 0.0, -12.0);
 }
+
+#[test]
+fn test_condition() {
+    use Expr::{Var, Const, Add, Sub, Mul, Div};
+    use Condition::{Not, And, Greater};
+    let cond = Greater(box Var(0), box Const(0.0));
+
+    fn fun(a: NumType) -> bool {
+        a > 0.0
+    }
+
+    fn check(cond: &Condition, a: NumType) {
+        assert_eq!(Ok(fun(a)), cond.evaluate(&[Argument(a)]))
+    }
+
+    check(&cond, 123.0);
+    check(&cond, 0.0);
+    check(&cond, -1.4);
+}
+
 
 // XXX: Clone?
 #[derive(Clone)]
