@@ -105,7 +105,6 @@ fn sym(c: char) -> Symbol {
 
 fn draw(symstr: &SymbolString, init_direction: f32, angle: f32, distance: f32, filename: &str) {
     let mut t = Canvas::new();
-    t.pendown();
     t.right(init_direction);
     for sym in symstr.0.iter() {
         match sym.character.0 {
