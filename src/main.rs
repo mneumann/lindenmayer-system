@@ -373,7 +373,8 @@ fn draw(symstr: &SymbolString<Character>,
             _ => {}
         }
     }
-    t.save_svg(&mut File::create(filename).unwrap()).unwrap();
+    t.save_svg(&mut File::create(filename.to_string() + ".svg").unwrap()).unwrap();
+    t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
 }
 
 fn draw_parametric(symstr: &SymbolString<Character>,
@@ -393,7 +394,8 @@ fn draw_parametric(symstr: &SymbolString<Character>,
             _ => {}
         }
     }
-    t.save_svg(&mut File::create(filename).unwrap()).unwrap();
+    t.save_svg(&mut File::create(filename.to_string() + ".svg").unwrap()).unwrap();
+    t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
 }
 
 
@@ -406,7 +408,7 @@ fn koch_curve(maxiter: usize) {
 
     let (after, iters) = system.develop(axiom, maxiter);
 
-    draw(&after, -90.0, 60.0, 10.0, &format!("koch_{:02}.svg", iters));
+    draw(&after, -90.0, 60.0, 10.0, &format!("koch_{:02}", iters));
 }
 
 fn dragon_curve(maxiter: usize) {
@@ -417,7 +419,7 @@ fn dragon_curve(maxiter: usize) {
 
     let (after, iters) = system.develop(axiom, maxiter);
 
-    draw(&after, 0.0, 90.0, 10.0, &format!("dragon_{:02}.svg", iters));
+    draw(&after, 0.0, 90.0, 10.0, &format!("dragon_{:02}", iters));
 }
 
 fn sierpinski_triangle(maxiter: usize) {
@@ -441,7 +443,7 @@ fn sierpinski_triangle(maxiter: usize) {
          -90.0,
          60.0,
          10.0,
-         &format!("sierpinski_{:02}.svg", iters));
+         &format!("sierpinski_{:02}", iters));
 }
 
 fn fractal_plant(maxiter: usize) {
@@ -457,7 +459,7 @@ fn fractal_plant(maxiter: usize) {
 
     let (after, iters) = system.develop(axiom, maxiter);
 
-    draw(&after, 0.0, 25.0, 10.0, &format!("plant_{:02}.svg", iters));
+    draw(&after, 0.0, 25.0, 10.0, &format!("plant_{:02}", iters));
 }
 
 fn branching_pattern_abop_1_9(maxiter: usize) {
@@ -488,7 +490,7 @@ fn branching_pattern_abop_1_9(maxiter: usize) {
 
     let (after, iters) = system.develop(axiom, maxiter);
 
-    draw_parametric(&after, 85.0, &format!("branching_abop_1_9_{:02}.svg", iters));
+    draw_parametric(&after, 85.0, &format!("branching_abop_1_9_{:02}", iters));
 }
 
 
