@@ -9,7 +9,8 @@ extern crate lindenmayer_system;
 use std::fmt;
 use std::fs::File;
 use turtle::{Canvas, Turtle};
-use lindenmayer_system::{Alphabet, SymbolString, Symbol, Expr, System, NumType, ParameterizedSymbol, Condition, Rule, Argument};
+use lindenmayer_system::{Alphabet, SymbolString, Symbol, Expr, System, NumType,
+                         ParameterizedSymbol, Condition, Rule, Argument};
 
 #[derive(Eq, PartialEq, Clone)]
 struct Character(char);
@@ -48,7 +49,7 @@ fn simple_rule(c: char, production: &str) -> Rule<Character> {
 fn psym(c: char, exprs: Vec<Expr>) -> ParameterizedSymbol<Character> {
     ParameterizedSymbol {
         character: Character(c),
-        expressions: exprs
+        expressions: exprs,
     }
 }
 
@@ -75,9 +76,7 @@ fn draw(symstr: &SymbolString<Character>,
     t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
 }
 
-fn draw_parametric(symstr: &SymbolString<Character>,
-        default_angle: f32,
-        filename: &str) {
+fn draw_parametric(symstr: &SymbolString<Character>, default_angle: f32, filename: &str) {
     let mut t = Canvas::new();
     for sym in symstr.0.iter() {
         match (sym.character.0, sym.arguments.get(0).map(|a| a.0)) {
@@ -162,11 +161,13 @@ fn fractal_plant(maxiter: usize) {
 
 fn branching_pattern_abop_1_9(maxiter: usize) {
     const R: NumType = 1.456;
-    let axiom = SymbolString(vec![Symbol{character: Character('A'), arguments: vec![Argument(300.0)]}]);
+    let axiom = SymbolString(vec![Symbol {
+                                      character: Character('A'),
+                                      arguments: vec![Argument(300.0)],
+                                  }]);
 
     let system = System {
-        rules: vec![
-                Rule{
+        rules: vec![Rule {
                         character: Character('A'),
                         arity: 1,
                         condition: Condition::True,
@@ -180,9 +181,8 @@ fn branching_pattern_abop_1_9(maxiter: usize) {
                                 psym('-', vec![]),
                                 psym('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
                                 psym(']', vec![]),
-                        ]
-                }
-        ]
+                        ],
+                    }],
     };
     println!("{:?}", system);
 
