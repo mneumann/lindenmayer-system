@@ -10,36 +10,25 @@ use turtle::{Canvas, Turtle};
 
 fn draw(symstr: &SymbolString<char, f32>,
         init_direction: f32,
-        angle: f32,
-        distance: f32,
+        default_angle: f32,
+        default_distance: f32,
         filename: &str) {
     let mut t = Canvas::new();
     t.right(init_direction);
     for sym in symstr.0.iter() {
-        match sym.symbol {
-            'F' => t.forward(distance),
-            'f' => t.move_forward(distance),
-            '+' => t.left(angle),
-            '-' => t.right(angle),
-            '[' => t.push(),
-            ']' => t.pop(),
-            _ => {}
-        }
-    }
-    t.save_svg(&mut File::create(filename.to_string() + ".svg").unwrap()).unwrap();
-    t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
-}
-
-fn draw_parametric(symstr: &SymbolString<char, f32>, default_angle: f32, filename: &str) {
-    let mut t = Canvas::new();
-    for sym in symstr.0.iter() {
         match (sym.symbol, sym.args.get(0)) {
             ('F', Some(&Expr::Const(d))) => t.forward(d),
+            ('F', None) => t.forward(default_distance),
+
             ('f', Some(&Expr::Const(d))) => t.move_forward(d),
+            ('f', None) => t.move_forward(default_distance),
+
             ('+', Some(&Expr::Const(a))) => t.rotate(a),
             ('+', None) => t.rotate(default_angle),
+
             ('-', Some(&Expr::Const(a))) => t.rotate(-a),
             ('-', None) => t.rotate(-default_angle),
+
             ('[', None) => t.push(),
             (']', None) => t.pop(),
             _ => {}
@@ -143,7 +132,11 @@ fn branching_pattern_abop_1_9(maxiter: usize) {
 
     let (after, iters) = system.develop(axiom, maxiter);
 
-    draw_parametric(&after, 85.0, &format!("branching_abop_1_9_{:02}", iters));
+    draw(&after,
+         0.0,
+         85.0,
+         0.0,
+         &format!("branching_abop_1_9_{:02}", iters));
 }
 
 
