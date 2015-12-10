@@ -1,60 +1,14 @@
 #![feature(box_syntax)]
 
-// SymbolExpr
-// abstract over Argument
-
-extern crate turtle;
 extern crate lindenmayer_system;
+extern crate turtle;
 
-use std::fmt;
+use lindenmayer_system::{Symbol, SymbolString, Expr, Rule, ConstSymbolString, ConstSymbol, System};
+
 use std::fs::File;
 use turtle::{Canvas, Turtle};
-use lindenmayer_system::{Alphabet, SymbolString, Symbol, Expr, System, NumType,
-                         ParameterizedSymbol, Condition, Rule, Argument};
 
-#[derive(Eq, PartialEq, Clone)]
-struct Character(char);
-impl Alphabet for Character {}
-
-impl fmt::Debug for Character {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-fn symstr_from_str(s: &str) -> SymbolString<Character> {
-    SymbolString(s.chars()
-                  .filter(|&c| !c.is_whitespace())
-                  .map(|c| Symbol::new(Character(c)))
-                  .collect())
-}
-
-fn production_from_str(s: &str) -> Vec<ParameterizedSymbol<Character>> {
-    s.chars()
-     .filter(|&c| !c.is_whitespace())
-     .map(|c| ParameterizedSymbol::new(Character(c)))
-     .collect()
-}
-
-/// A simple rule does not have any conditions nor parameters.
-fn simple_rule(c: char, production: &str) -> Rule<Character> {
-    Rule {
-        character: Character(c),
-        arity: 0,
-        condition: Condition::True,
-        production: production_from_str(production),
-    }
-}
-
-fn psym(c: char, exprs: Vec<Expr>) -> ParameterizedSymbol<Character> {
-    ParameterizedSymbol {
-        character: Character(c),
-        expressions: exprs,
-    }
-}
-
-
-fn draw(symstr: &SymbolString<Character>,
+fn draw(symstr: &ConstSymbolString<char, f32>,
         init_direction: f32,
         angle: f32,
         distance: f32,
@@ -62,7 +16,7 @@ fn draw(symstr: &SymbolString<Character>,
     let mut t = Canvas::new();
     t.right(init_direction);
     for sym in symstr.0.iter() {
-        match sym.character.0 {
+        match sym.symbol {
             'F' => t.forward(distance),
             'f' => t.move_forward(distance),
             '+' => t.left(angle),
@@ -76,15 +30,15 @@ fn draw(symstr: &SymbolString<Character>,
     t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
 }
 
-fn draw_parametric(symstr: &SymbolString<Character>, default_angle: f32, filename: &str) {
+fn draw_parametric(symstr: &ConstSymbolString<char, f32>, default_angle: f32, filename: &str) {
     let mut t = Canvas::new();
     for sym in symstr.0.iter() {
-        match (sym.character.0, sym.arguments.get(0).map(|a| a.0)) {
-            ('F', Some(d)) => t.forward(d),
-            ('f', Some(d)) => t.move_forward(d),
-            ('+', Some(a)) => t.rotate(a),
+        match (sym.symbol, sym.args.get(0)) {
+            ('F', Some(&d)) => t.forward(d),
+            ('f', Some(&d)) => t.move_forward(d),
+            ('+', Some(&a)) => t.rotate(a),
             ('+', None) => t.rotate(default_angle),
-            ('-', Some(a)) => t.rotate(-a),
+            ('-', Some(&a)) => t.rotate(-a),
             ('-', None) => t.rotate(-default_angle),
             ('[', None) => t.push(),
             (']', None) => t.pop(),
@@ -95,12 +49,29 @@ fn draw_parametric(symstr: &SymbolString<Character>, default_angle: f32, filenam
     t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
 }
 
+fn symstr(s: &str) -> SymbolString<char, f32> {
+    SymbolString(s.chars()
+                  .filter(|&c| !c.is_whitespace())
+                  .map(|c| Symbol::new(c))
+                  .collect())
+}
 
+fn csymstr(s: &str) -> ConstSymbolString<char, f32> {
+    ConstSymbolString(s.chars()
+                       .filter(|&c| !c.is_whitespace())
+                       .map(|c| ConstSymbol::new(c))
+                       .collect())
+}
+
+fn rule(sym: char, successor: &str) -> Rule<char, f32> {
+    Rule::new(sym, symstr(successor))
+}
 
 fn koch_curve(maxiter: usize) {
-    let axiom = symstr_from_str("F++F++F");
+    let axiom = csymstr("F++F++F");
 
-    let system = System { rules: vec![simple_rule('F', "F-F++F-F")] };
+    let mut system: System<char, f32> = System::new();
+    system.add_rule(rule('F', "F-F++F-F"));
     println!("{:?}", system);
 
     let (after, iters) = system.develop(axiom, maxiter);
@@ -109,9 +80,11 @@ fn koch_curve(maxiter: usize) {
 }
 
 fn dragon_curve(maxiter: usize) {
-    let axiom = symstr_from_str("FX");
+    let axiom = csymstr("FX");
 
-    let system = System { rules: vec![simple_rule('X', "X+YF+"), simple_rule('Y', "-FX-Y")] };
+    let mut system = System::new();
+    system.add_rule(rule('X', "X+YF+"));
+    system.add_rule(rule('Y', "-FX-Y"));
     println!("{:?}", system);
 
     let (after, iters) = system.develop(axiom, maxiter);
@@ -120,21 +93,20 @@ fn dragon_curve(maxiter: usize) {
 }
 
 fn sierpinski_triangle(maxiter: usize) {
-    let axiom = symstr_from_str("A");
+    let axiom = csymstr("A");
 
-    let system = System { rules: vec![simple_rule('A', "+B-A-B+"), simple_rule('B', "-A+B+A-")] };
+    let mut system = System::new();
+    system.add_rule(rule('A', "+B-A-B+"));
+    system.add_rule(rule('B', "-A+B+A-"));
     println!("{:?}", system);
 
     let (after, iters) = system.develop(axiom, maxiter);
 
     // replace A and B with F
-    let system = System {
-        rules: vec![
-        simple_rule('A', "F"),
-        simple_rule('B', "F"),
-        ],
-    };
-    let (after, _iters) = system.develop1(&after);
+    let mut system = System::new();
+    system.add_rule(rule('A', "F"));
+    system.add_rule(rule('B', "F"));
+    let (after, _iters) = system.develop_step(&after);
 
     draw(&after,
          -90.0,
@@ -144,14 +116,11 @@ fn sierpinski_triangle(maxiter: usize) {
 }
 
 fn fractal_plant(maxiter: usize) {
-    let axiom = symstr_from_str("X");
+    let axiom = csymstr("X");
 
-    let system = System {
-        rules: vec![
-        simple_rule('X', "F-[[X]+X]+F[+FX]-X"),
-        simple_rule('F', "FF"),
-        ],
-    };
+    let mut system = System::new();
+    system.add_rule(rule('X', "F-[[X]+X]+F[+FX]-X"));
+    system.add_rule(rule('F', "FF"));
     println!("{:?}", system);
 
     let (after, iters) = system.develop(axiom, maxiter);
@@ -160,30 +129,23 @@ fn fractal_plant(maxiter: usize) {
 }
 
 fn branching_pattern_abop_1_9(maxiter: usize) {
-    const R: NumType = 1.456;
-    let axiom = SymbolString(vec![Symbol {
-                                      character: Character('A'),
-                                      arguments: vec![Argument(300.0)],
-                                  }]);
+    const R: f32 = 1.456;
+    let axiom = ConstSymbolString(vec![ConstSymbol::new_parametric('A', vec![300.0])]);
 
-    let system = System {
-        rules: vec![Rule {
-                        character: Character('A'),
-                        arity: 1,
-                        condition: Condition::True,
-                        production: vec![
-                                psym('F', vec![Expr::Arg(0)]),
-                                psym('[', vec![]),
-                                psym('+', vec![]),
-                                psym('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
-                                psym(']', vec![]),
-                                psym('[', vec![]),
-                                psym('-', vec![]),
-                                psym('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
-                                psym(']', vec![]),
-                        ],
-                    }],
-    };
+    let mut system = System::new();
+    system.add_rule(Rule::new('A',
+                              SymbolString(vec![
+            Symbol::new_parametric('F', vec![Expr::Arg(0)]),
+            Symbol::new('['),
+            Symbol::new('+'),
+            Symbol::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
+            Symbol::new(']'),
+            Symbol::new('['),
+            Symbol::new('-'),
+            Symbol::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
+            Symbol::new(']'),
+        ])));
+
     println!("{:?}", system);
 
     let (after, iters) = system.develop(axiom, maxiter);
