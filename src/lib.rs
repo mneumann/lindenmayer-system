@@ -15,7 +15,7 @@ impl Alphabet for &'static str {}
 impl Alphabet for char {}
 
 /// A parametric symbol
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct Symbol<A: Alphabet, T: NumType> {
     pub symbol: A,
     pub args: Vec<Expr<T>>,
@@ -68,6 +68,7 @@ impl<A:Alphabet, T:NumType> Symbol<A, T> {
 }
 
 /// A list of Symbols.
+#[derive(PartialEq, Eq)]
 pub struct SymbolString<A: Alphabet, T: NumType>(pub Vec<Symbol<A, T>>);
 
 impl<A:Alphabet, T: NumType> fmt::Debug for SymbolString<A, T> {

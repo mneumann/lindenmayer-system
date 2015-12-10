@@ -21,7 +21,7 @@ pub enum ExprError {
 }
 
 /// An expression evaluates to a numeric value of `NumType`.
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum Expr<T: NumType> {
     Const(T),
     // References an actual Argument by position
