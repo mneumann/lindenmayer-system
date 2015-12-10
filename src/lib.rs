@@ -200,13 +200,13 @@ impl<A:Alphabet, T:NumType> Rule<A, T> {
 #[test]
 fn test_rule_apply() {
     let p = Symbol::new_parametric("P", vec![Expr::Const(123u32)]);
-    let rule = Rule::new("A", Condition::True, SymbolString(vec![p.clone()]));
+    let rule = Rule::new("A", SymbolString(vec![p.clone()]));
     assert_eq!(Err(RuleError::SymbolMismatch),
                rule.apply(&ConstSymbol::new("P")));
     assert_eq!(Ok(ConstSymbolString(vec![ConstSymbol::new_parametric("P", vec![123u32])])),
                rule.apply(&ConstSymbol::new("A")));
 
-    let rule = Rule::new("A", Condition::False, SymbolString(vec![p.clone()]));
+    let rule = Rule::new_conditional("A", SymbolString(vec![p.clone()]), Condition::False);
     assert_eq!(Err(RuleError::ConditionFalse),
                rule.apply(&ConstSymbol::new("A")));
 }
