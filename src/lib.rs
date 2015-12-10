@@ -23,11 +23,18 @@ pub struct Symbol<A: Alphabet, T: NumType> {
 
 impl<A:Alphabet, T:NumType> fmt::Debug for Symbol<A, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "({}", self.symbol));
-        for expr in self.args.iter() {
-            try!(write!(f, " {:?}", expr));
+        try!(write!(f, "{}", self.symbol));
+        if self.args.is_empty() {
+            return Ok(());
         }
 
+        try!(write!(f, "("));
+        for (i, expr) in self.args.iter().enumerate() {
+            if i > 0 {
+                try!(write!(f, ", "));
+            }
+            try!(write!(f, "{:?}", expr));
+        }
         write!(f, ")")
     }
 }
@@ -65,10 +72,7 @@ pub struct SymbolString<A: Alphabet, T: NumType>(pub Vec<Symbol<A, T>>);
 
 impl<A:Alphabet, T: NumType> fmt::Debug for SymbolString<A, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        for (i, sym) in self.0.iter().enumerate() {
-            if i > 0 {
-                try!(write!(f, " "));
-            }
+        for sym in self.0.iter() {
             try!(write!(f, "{:?}", sym));
         }
         Ok(())

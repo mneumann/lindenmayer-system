@@ -1,9 +1,9 @@
-use std::fmt::Debug;
+use std::fmt;
 use std::ops;
 use std::num::Zero;
 use std::cmp::{PartialEq, PartialOrd};
 
-pub trait NumType: Debug+Clone+Zero+ops::Add<Output=Self>+ops::Sub<Output=Self>+ops::Mul<Output=Self>+ops::Div<Output=Self>+PartialEq+PartialOrd {}
+pub trait NumType: fmt::Debug+Clone+Zero+ops::Add<Output=Self>+ops::Sub<Output=Self>+ops::Mul<Output=Self>+ops::Div<Output=Self>+PartialEq+PartialOrd {}
 
 impl NumType for f32 {}
 impl NumType for f64 {}
@@ -21,15 +21,28 @@ pub enum ExprError {
 }
 
 /// An expression evaluates to a numeric value of `NumType`.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub enum Expr<T: NumType> {
+    Const(T),
     // References an actual Argument by position
     Arg(usize),
-    Const(T),
     Add(Box<Expr<T>>, Box<Expr<T>>),
     Sub(Box<Expr<T>>, Box<Expr<T>>),
     Mul(Box<Expr<T>>, Box<Expr<T>>),
     Div(Box<Expr<T>>, Box<Expr<T>>),
+}
+
+impl<T:NumType> fmt::Debug for Expr<T> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &Expr::Const(ref c) => write!(f, "{:?}", c),
+            &Expr::Arg(num) => write!(f, "a{}", num),
+            &Expr::Add(ref op1, ref op2) => write!(f, "({:?}+{:?})", op1, op2),
+            &Expr::Sub(ref op1, ref op2) => write!(f, "({:?}-{:?})", op1, op2),
+            &Expr::Mul(ref op1, ref op2) => write!(f, "{:?}*{:?}", op1, op2),
+            &Expr::Div(ref op1, ref op2) => write!(f, "{:?}/{:?}", op1, op2),
+        }
+    }
 }
 
 impl<T:NumType> Expr<T> {
