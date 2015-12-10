@@ -33,22 +33,32 @@ pub enum Expr<T: NumType> {
 }
 
 impl<T:NumType> Expr<T> {
-    pub fn evaluate(&self, args: &[T]) -> Result<T, ExprError> {
-        match *self {
-            Expr::Arg(n) => Ok((*try!(args.get(n).ok_or(ExprError::InvalidArg))).clone()),
-            Expr::Const(ref c) => Ok(c.clone()),
-            Expr::Add(ref e1, ref e2) => Ok(try!(e1.evaluate(args)) + try!(e2.evaluate(args))),
-            Expr::Sub(ref e1, ref e2) => Ok(try!(e1.evaluate(args)) - try!(e2.evaluate(args))),
-            Expr::Mul(ref e1, ref e2) => Ok(try!(e1.evaluate(args)) * try!(e2.evaluate(args))),
+    pub fn value(&self) -> Result<T, ExprError> {
+        if let &Expr::Const(ref c) = self {
+            Ok(c.clone())
+        } else {
+            Err(ExprError::InvalidArg)
+        }
+    }
+
+    pub fn evaluate(&self, args: &[Expr<T>]) -> Result<T, ExprError> {
+        Ok(match *self {
+            Expr::Arg(n) => {
+                try!(try!(args.get(n).ok_or(ExprError::InvalidArg)).value())
+            }
+            Expr::Const(ref c) => c.clone(),
+            Expr::Add(ref e1, ref e2) => try!(e1.evaluate(args)) + try!(e2.evaluate(args)),
+            Expr::Sub(ref e1, ref e2) => try!(e1.evaluate(args)) - try!(e2.evaluate(args)),
+            Expr::Mul(ref e1, ref e2) => try!(e1.evaluate(args)) * try!(e2.evaluate(args)),
             Expr::Div(ref e1, ref e2) => {
                 let a = try!(e1.evaluate(args));
                 let b = try!(e2.evaluate(args));
                 if b == T::zero() {
                     return Err(ExprError::DivByZero);
                 }
-                Ok(a / b)
+                a / b
             }
-        }
+        })
     }
 }
 
@@ -72,7 +82,7 @@ pub enum Condition<T: NumType> {
 }
 
 impl<T:NumType> Condition<T> {
-    pub fn evaluate(&self, args: &[T]) -> Result<bool, ExprError> {
+    pub fn evaluate(&self, args: &[Expr<T>]) -> Result<bool, ExprError> {
         Ok(match *self {
             Condition::True => true,
             Condition::False => false,
@@ -103,7 +113,8 @@ fn test_expr() {
     }
 
     fn check(expr: &Expr<f32>, a: f32, b: f32) {
-        assert_eq!(Ok(fun(a, b)), expr.evaluate(&[a, b]))
+        assert_eq!(Ok(fun(a, b)),
+                   expr.evaluate(&[Expr::Const(a), Expr::Const(b)]))
     }
 
     check(&expr, 123.0, 4444.0);
@@ -119,7 +130,7 @@ fn test_condition() {
     }
 
     fn check(cond: &Condition<f32>, a: f32) {
-        assert_eq!(Ok(fun(a)), cond.evaluate(&[a]))
+        assert_eq!(Ok(fun(a)), cond.evaluate(&[Expr::Const(a)]))
     }
 
     check(&cond, 123.0);

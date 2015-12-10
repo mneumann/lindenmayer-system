@@ -3,12 +3,12 @@
 extern crate lindenmayer_system;
 extern crate turtle;
 
-use lindenmayer_system::{Symbol, SymbolString, Expr, Rule, ConstSymbolString, ConstSymbol, System};
+use lindenmayer_system::{Symbol, SymbolString, Expr, Rule, System};
 
 use std::fs::File;
 use turtle::{Canvas, Turtle};
 
-fn draw(symstr: &ConstSymbolString<char, f32>,
+fn draw(symstr: &SymbolString<char, f32>,
         init_direction: f32,
         angle: f32,
         distance: f32,
@@ -30,15 +30,15 @@ fn draw(symstr: &ConstSymbolString<char, f32>,
     t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
 }
 
-fn draw_parametric(symstr: &ConstSymbolString<char, f32>, default_angle: f32, filename: &str) {
+fn draw_parametric(symstr: &SymbolString<char, f32>, default_angle: f32, filename: &str) {
     let mut t = Canvas::new();
     for sym in symstr.0.iter() {
         match (sym.symbol, sym.args.get(0)) {
-            ('F', Some(&d)) => t.forward(d),
-            ('f', Some(&d)) => t.move_forward(d),
-            ('+', Some(&a)) => t.rotate(a),
+            ('F', Some(&Expr::Const(d))) => t.forward(d),
+            ('f', Some(&Expr::Const(d))) => t.move_forward(d),
+            ('+', Some(&Expr::Const(a))) => t.rotate(a),
             ('+', None) => t.rotate(default_angle),
-            ('-', Some(&a)) => t.rotate(-a),
+            ('-', Some(&Expr::Const(a))) => t.rotate(-a),
             ('-', None) => t.rotate(-default_angle),
             ('[', None) => t.push(),
             (']', None) => t.pop(),
@@ -56,19 +56,12 @@ fn symstr(s: &str) -> SymbolString<char, f32> {
                   .collect())
 }
 
-fn csymstr(s: &str) -> ConstSymbolString<char, f32> {
-    ConstSymbolString(s.chars()
-                       .filter(|&c| !c.is_whitespace())
-                       .map(|c| ConstSymbol::new(c))
-                       .collect())
-}
-
 fn rule(sym: char, successor: &str) -> Rule<char, f32> {
     Rule::new(sym, symstr(successor))
 }
 
 fn koch_curve(maxiter: usize) {
-    let axiom = csymstr("F++F++F");
+    let axiom = symstr("F++F++F");
 
     let mut system: System<char, f32> = System::new();
     system.add_rule(rule('F', "F-F++F-F"));
@@ -80,7 +73,7 @@ fn koch_curve(maxiter: usize) {
 }
 
 fn dragon_curve(maxiter: usize) {
-    let axiom = csymstr("FX");
+    let axiom = symstr("FX");
 
     let mut system = System::new();
     system.add_rule(rule('X', "X+YF+"));
@@ -93,7 +86,7 @@ fn dragon_curve(maxiter: usize) {
 }
 
 fn sierpinski_triangle(maxiter: usize) {
-    let axiom = csymstr("A");
+    let axiom = symstr("A");
 
     let mut system = System::new();
     system.add_rule(rule('A', "+B-A-B+"));
@@ -116,7 +109,7 @@ fn sierpinski_triangle(maxiter: usize) {
 }
 
 fn fractal_plant(maxiter: usize) {
-    let axiom = csymstr("X");
+    let axiom = symstr("X");
 
     let mut system = System::new();
     system.add_rule(rule('X', "F-[[X]+X]+F[+FX]-X"));
@@ -130,7 +123,7 @@ fn fractal_plant(maxiter: usize) {
 
 fn branching_pattern_abop_1_9(maxiter: usize) {
     const R: f32 = 1.456;
-    let axiom = ConstSymbolString(vec![ConstSymbol::new_parametric('A', vec![300.0])]);
+    let axiom = SymbolString(vec![Symbol::new_parametric('A', vec![Expr::Const(300.0)])]);
 
     let mut system = System::new();
     system.add_rule(Rule::new('A',
