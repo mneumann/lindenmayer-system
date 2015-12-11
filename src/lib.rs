@@ -2,11 +2,13 @@
 #![feature(zero_one)]
 
 pub mod expr;
+pub mod symbol;
 
 use std::fmt;
 use expr::NumType;
 
 pub use expr::{Expr, Condition, ExprError};
+pub use symbol::Symbol;
 
 /// Used to name symbols and variables.
 pub trait Alphabet: fmt::Display + fmt::Debug + PartialEq + Eq + Clone {}
@@ -16,88 +18,20 @@ impl Alphabet for char {}
 
 /// The common interface for Symbols. Basically this abstracts over
 /// the argument implementation.
-pub trait Symbolic<A: Alphabet, T: NumType>: fmt::Debug + Clone + PartialEq {
-    fn symbol(&self) -> &A;
-    fn from_iter<I, E>(symbol: A, args_iter: I) -> Result<Self, E> where I: Iterator<Item = Result<Expr<T>, E>>;
-    fn evaluate(&self, bindings: &[Expr<T>]) -> Result<Self, ExprError>;
-}
-
-
-
-
-/// A parametric symbol
-#[derive(Clone, PartialEq, Eq)]
-pub struct Symbol<A: Alphabet, T: NumType> {
-    pub symbol: A,
-    pub args: Vec<Expr<T>>,
-}
-
-impl<A:Alphabet, T:NumType> fmt::Debug for Symbol<A, T> {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}", self.symbol));
-        if self.args.is_empty() {
-            return Ok(());
-        }
-
-        try!(write!(f, "("));
-        for (i, expr) in self.args.iter().enumerate() {
-            if i > 0 {
-                try!(write!(f, ", "));
-            }
-            try!(write!(f, "{:?}", expr));
-        }
-        write!(f, ")")
-    }
-}
-
-impl<A:Alphabet, T:NumType> Symbolic<A,T> for Symbol<A, T> {
-    fn symbol(&self) -> &A {
-        &self.symbol
-    }
-
-    fn from_iter<I, E>(symbol: A, args_iter: I) -> Result<Symbol<A, T>, E>
-        where I: Iterator<Item = Result<Expr<T>, E>>
-    {
-        let mut values = Vec::with_capacity(args_iter.size_hint().0);
-        for expr in args_iter.into_iter() {
-            values.push(try!(expr));
-        }
-        Ok(Symbol {
-            symbol: symbol,
-            args: values,
-        })
-    }
-
-    fn evaluate(&self, bindings: &[Expr<T>]) -> Result<Symbol<A, T>, ExprError> {
-        Symbol::from_iter(self.symbol.clone(),
-                          self.args
-                              .iter()
-                              .map(|expr| expr.evaluate(bindings).map(|ok| Expr::Const(ok))))
-    }
-
-}
-
-impl<A:Alphabet, T:NumType> Symbol<A, T> {
-    pub fn new(symbol: A) -> Symbol<A, T> {
-        Symbol {
-            symbol: symbol,
-            args: vec![],
-        }
-    }
-
-    pub fn new_parametric(symbol: A, args: Vec<Expr<T>>) -> Symbol<A, T> {
-        Symbol {
-            symbol: symbol,
-            args: args,
-        }
-    }
+pub trait Symbolic: fmt::Debug + Clone + PartialEq {
+    type A: Alphabet;
+    type T: NumType;
+    fn symbol(&self) -> &Self::A;
+    fn args(&self) -> &[Expr<Self::T>];
+    fn from_iter<I, E>(symbol: Self::A, args_iter: I) -> Result<Self, E> where I: Iterator<Item = Result<Expr<Self::T>, E>>;
+    fn evaluate(&self, bindings: &[Expr<Self::T>]) -> Result<Self, ExprError>;
 }
 
 /// A list of Symbols.
 #[derive(PartialEq, Eq)]
-pub struct SymbolString<A: Alphabet, T: NumType>(pub Vec<Symbol<A, T>>);
+pub struct SymbolString<S:Symbolic>(pub Vec<S>);
 
-impl<A:Alphabet, T: NumType> fmt::Debug for SymbolString<A, T> {
+impl<S:Symbolic> fmt::Debug for SymbolString<S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for sym in self.0.iter() {
             try!(write!(f, "{:?}", sym));
@@ -106,9 +40,9 @@ impl<A:Alphabet, T: NumType> fmt::Debug for SymbolString<A, T> {
     }
 }
 
-impl<A:Alphabet, T:NumType> SymbolString<A, T> {
-    fn from_iter<I, E>(symbol_iter: I) -> Result<SymbolString<A, T>, E>
-        where I: Iterator<Item = Result<Symbol<A, T>, E>>
+impl<S:Symbolic> SymbolString<S> {
+    fn from_iter<I, E>(symbol_iter: I) -> Result<SymbolString<S>, E>
+        where I: Iterator<Item = Result<S, E>>
     {
         let mut symbols = Vec::with_capacity(symbol_iter.size_hint().0);
         for sym in symbol_iter.into_iter() {
@@ -117,16 +51,16 @@ impl<A:Alphabet, T:NumType> SymbolString<A, T> {
         Ok(SymbolString(symbols))
     }
 
-    pub fn evaluate(&self, bindings: &[Expr<T>]) -> Result<SymbolString<A, T>, ExprError> {
+    pub fn evaluate(&self, bindings: &[Expr<S::T>]) -> Result<SymbolString<S>, ExprError> {
         SymbolString::from_iter(self.0.iter().map(|sym| sym.evaluate(bindings)))
     }
 }
 
 #[derive(Debug)]
-pub struct Rule<A: Alphabet, T: NumType> {
-    pub symbol: A,
-    pub condition: Condition<T>,
-    pub successor: SymbolString<A, T>,
+pub struct Rule<S: Symbolic> {
+    pub symbol: S::A,
+    pub condition: Condition<S::T>,
+    pub successor: SymbolString<S>,
 }
 
 #[derive(Debug, Eq, PartialEq)]
@@ -137,9 +71,8 @@ pub enum RuleError {
     ExprFailed(ExprError),
 }
 
-
-impl<A:Alphabet, T:NumType> Rule<A, T> {
-    pub fn new(symbol: A, successor: SymbolString<A, T>) -> Rule<A, T> {
+impl<S:Symbolic> Rule<S> {
+    pub fn new(symbol: S::A, successor: SymbolString<S>) -> Rule<S> {
         Rule {
             symbol: symbol,
             condition: Condition::True,
@@ -147,10 +80,10 @@ impl<A:Alphabet, T:NumType> Rule<A, T> {
         }
     }
 
-    pub fn new_conditional(symbol: A,
-                           successor: SymbolString<A, T>,
-                           condition: Condition<T>)
-                           -> Rule<A, T> {
+    pub fn new_conditional(symbol: S::A,
+                           successor: SymbolString<S>,
+                           condition: Condition<S::T>)
+                           -> Rule<S> {
         Rule {
             symbol: symbol,
             condition: condition,
@@ -160,11 +93,12 @@ impl<A:Alphabet, T:NumType> Rule<A, T> {
 
     /// Apply the rule to the given (constant) symbol and if possible, produce
     /// a successor.
-    pub fn apply(&self, sym: &Symbol<A, T>) -> Result<SymbolString<A, T>, RuleError> {
-        if sym.symbol == self.symbol {
-            match self.condition.evaluate(&sym.args) {
+    pub fn apply(&self, sym: &S) -> Result<SymbolString<S>, RuleError> {
+        let args = sym.args();
+        if self.symbol.eq(sym.symbol()) {
+            match self.condition.evaluate(args) {
                 Ok(true) => {
-                    match self.successor.evaluate(&sym.args) {
+                    match self.successor.evaluate(args) {
                         Ok(symstr) => Ok(symstr),
                         Err(e) => Err(RuleError::ExprFailed(e)),
                     }
@@ -184,6 +118,7 @@ impl<A:Alphabet, T:NumType> Rule<A, T> {
 
 #[test]
 fn test_rule_apply() {
+    use symbol::Symbol;
     let p = Symbol::new_parametric("P", vec![Expr::Const(123u32)]);
     let rule = Rule::new("A", SymbolString(vec![p.clone()]));
     assert_eq!(Err(RuleError::SymbolMismatch),
@@ -197,21 +132,21 @@ fn test_rule_apply() {
 }
 
 #[derive(Debug)]
-pub struct System<A: Alphabet, T: NumType> {
-    rules: Vec<Rule<A, T>>,
+pub struct System<S: Symbolic> {
+    rules: Vec<Rule<S>>,
 }
 
-impl<A:Alphabet, T:NumType> System<A, T> {
-    pub fn new() -> System<A, T> {
+impl<S:Symbolic> System<S> {
+    pub fn new() -> System<S> {
         System { rules: vec![] }
     }
 
-    pub fn add_rule(&mut self, rule: Rule<A, T>) {
+    pub fn add_rule(&mut self, rule: Rule<S>) {
         self.rules.push(rule);
     }
 
     /// Apply first matching rule and return expanded successor.
-    fn apply_first_rule(&self, sym: &Symbol<A, T>) -> Option<SymbolString<A, T>> {
+    fn apply_first_rule(&self, sym: &S) -> Option<SymbolString<S>> {
         for rule in self.rules.iter() {
             if let Ok(successor) = rule.apply(sym) {
                 return Some(successor);
@@ -222,7 +157,7 @@ impl<A:Alphabet, T:NumType> System<A, T> {
 
     /// Apply in parallel the first matching rule to each symbol in the string.
     /// Returns the total number of rule applications.
-    pub fn develop_step(&self, axiom: &SymbolString<A, T>) -> (SymbolString<A, T>, usize) {
+    pub fn develop_step(&self, axiom: &SymbolString<S>) -> (SymbolString<S>, usize) {
         let mut expanded = Vec::new();
         let mut rule_applications = 0;
 
@@ -244,9 +179,9 @@ impl<A:Alphabet, T:NumType> System<A, T> {
 
     /// Develop the system starting with `axiom` up to `max_iterations`. Return iteration count.
     pub fn develop(&self,
-                   axiom: SymbolString<A, T>,
+                   axiom: SymbolString<S>,
                    max_iterations: usize)
-                   -> (SymbolString<A, T>, usize) {
+                   -> (SymbolString<S>, usize) {
         let mut current = axiom;
 
         for iter in 0..max_iterations {
