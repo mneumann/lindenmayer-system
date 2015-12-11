@@ -17,7 +17,7 @@ pub fn draw(symstr: &SymbolString<DSym<char, f32>>,
     let mut t = Canvas::new();
     t.right(init_direction);
     for sym in symstr.0.iter() {
-        match (sym.symbol, sym.args.get(0)) {
+        match (*sym.symbol(), sym.args().get(0)) {
             ('F', Some(&Expr::Const(d))) => t.forward(d),
             ('F', None) => t.forward(default_distance),
 

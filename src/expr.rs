@@ -3,7 +3,7 @@ use std::ops;
 use std::num::Zero;
 use std::cmp::{PartialEq, PartialOrd};
 
-pub trait NumType: fmt::Debug+Clone+Zero+ops::Add<Output=Self>+ops::Sub<Output=Self>+ops::Mul<Output=Self>+ops::Div<Output=Self>+PartialEq+PartialOrd {}
+pub trait NumType: fmt::Debug+Clone+Zero+ops::Add<Output=Self>+ops::Sub<Output=Self>+ops::Mul<Output=Self>+ops::Div<Output=Self>+PartialEq+PartialOrd+Default {}
 
 impl NumType for f32 {}
 impl NumType for f64 {}
