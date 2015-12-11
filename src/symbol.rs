@@ -1,4 +1,4 @@
-use super::{Alphabet, Symbolic, Expr, ExprError};
+use super::{Alphabet, Symbolic, Expr};
 use super::expr::NumType;
 use std::fmt;
 
@@ -11,19 +11,7 @@ pub struct Symbol<A: Alphabet, T: NumType> {
 
 impl<A:Alphabet, T:NumType> fmt::Debug for Symbol<A, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f, "{}", self.symbol));
-        if self.args.is_empty() {
-            return Ok(());
-        }
-
-        try!(write!(f, "("));
-        for (i, expr) in self.args.iter().enumerate() {
-            if i > 0 {
-                try!(write!(f, ", "));
-            }
-            try!(write!(f, "{:?}", expr));
-        }
-        write!(f, ")")
+        self.debug_fmt(f)
     }
 }
 
@@ -51,14 +39,6 @@ impl<A:Alphabet, T:NumType> Symbolic for Symbol<A, T> {
             args: values,
         })
     }
-
-    fn evaluate(&self, bindings: &[Expr<T>]) -> Result<Symbol<A, T>, ExprError> {
-        Symbol::from_iter(self.symbol.clone(),
-                          self.args
-                              .iter()
-                              .map(|expr| expr.evaluate(bindings).map(|ok| Expr::Const(ok))))
-    }
-
 }
 
 impl<A:Alphabet, T:NumType> Symbol<A, T> {

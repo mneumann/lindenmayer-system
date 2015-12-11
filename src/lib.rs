@@ -18,13 +18,41 @@ impl Alphabet for char {}
 
 /// The common interface for Symbols. Basically this abstracts over
 /// the argument implementation.
-pub trait Symbolic: fmt::Debug + Clone + PartialEq {
+pub trait Symbolic: Clone + PartialEq + fmt::Debug {
     type A: Alphabet;
+
     type T: NumType;
+
     fn symbol(&self) -> &Self::A;
+
     fn args(&self) -> &[Expr<Self::T>];
+
     fn from_iter<I, E>(symbol: Self::A, args_iter: I) -> Result<Self, E> where I: Iterator<Item = Result<Expr<Self::T>, E>>;
-    fn evaluate(&self, bindings: &[Expr<Self::T>]) -> Result<Self, ExprError>;
+
+    fn evaluate(&self, bindings: &[Expr<Self::T>]) -> Result<Self, ExprError> {
+        Self::from_iter((*self.symbol()).clone(),
+                          self.args()
+                              .iter()
+                              .map(|expr| expr.evaluate(bindings).map(|ok| Expr::Const(ok))))
+
+    }
+
+    fn debug_fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let args = self.args();
+        try!(write!(f, "{}", *self.symbol()));
+        if args.is_empty() {
+            return Ok(());
+        }
+
+        try!(write!(f, "("));
+        for (i, expr) in args.iter().enumerate() {
+            if i > 0 {
+                try!(write!(f, ", "));
+            }
+            try!(write!(f, "{:?}", expr));
+        }
+        write!(f, ")")
+    }
 }
 
 /// A list of Symbols.
