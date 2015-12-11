@@ -27,7 +27,7 @@ impl<A:Alphabet, T:NumType> Symbolic for DSym<A, T> {
         &self.args[..]
     }
 
-    fn from_iter<I, E>(symbol: A, args_iter: I) -> Result<DSym<A, T>, E>
+    fn from_result_iter<I, E>(symbol: A, args_iter: I) -> Result<DSym<A, T>, E>
         where I: Iterator<Item = Result<Expr<T>, E>>
     {
         let mut values = Vec::with_capacity(args_iter.size_hint().0);

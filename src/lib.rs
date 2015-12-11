@@ -26,10 +26,15 @@ pub trait Symbolic: Clone + PartialEq + fmt::Debug {
 
     fn args(&self) -> &[Expr<Self::T>];
 
-    fn from_iter<I, E>(symbol: Self::A, args_iter: I) -> Result<Self, E> where I: Iterator<Item = Result<Expr<Self::T>, E>>;
+    fn from_result_iter<I, E>(symbol: Self::A, args_iter: I) -> Result<Self, E> where I: Iterator<Item = Result<Expr<Self::T>, E>>;
+
+    fn from_iter<I>(symbol: Self::A, args_iter: I) -> Self where I: Iterator<Item = Expr<Self::T>> {
+        let res: Result<_, ()> = Self::from_result_iter(symbol, args_iter.map(|i| Ok(i)));
+        res.unwrap()
+    }
 
     fn evaluate(&self, bindings: &[Expr<Self::T>]) -> Result<Self, ExprError> {
-        Self::from_iter((*self.symbol()).clone(),
+        Self::from_result_iter((*self.symbol()).clone(),
                           self.args()
                               .iter()
                               .map(|expr| expr.evaluate(bindings).map(|ok| Expr::Const(ok))))
@@ -68,7 +73,7 @@ impl<S:Symbolic> fmt::Debug for SymbolString<S> {
 }
 
 impl<S:Symbolic> SymbolString<S> {
-    fn from_iter<I, E>(symbol_iter: I) -> Result<SymbolString<S>, E>
+    fn from_result_iter<I, E>(symbol_iter: I) -> Result<SymbolString<S>, E>
         where I: Iterator<Item = Result<S, E>>
     {
         let mut symbols = Vec::with_capacity(symbol_iter.size_hint().0);
@@ -79,7 +84,7 @@ impl<S:Symbolic> SymbolString<S> {
     }
 
     pub fn evaluate(&self, bindings: &[Expr<S::T>]) -> Result<SymbolString<S>, ExprError> {
-        SymbolString::from_iter(self.0.iter().map(|sym| sym.evaluate(bindings)))
+        SymbolString::from_result_iter(self.0.iter().map(|sym| sym.evaluate(bindings)))
     }
 }
 
