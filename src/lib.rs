@@ -47,6 +47,19 @@ impl<A:Alphabet, T:NumType> Symbol<A, T> {
         }
     }
 
+    fn from_iter<I, E>(symbol: A, args_iter: I) -> Result<Symbol<A, T>, E>
+        where I: Iterator<Item = Result<Expr<T>, E>>
+    {
+        let mut values = Vec::with_capacity(args_iter.size_hint().0);
+        for expr in args_iter.into_iter() {
+            values.push(try!(expr));
+        }
+        Ok(Symbol {
+            symbol: symbol,
+            args: values,
+        })
+    }
+
     pub fn new_parametric(symbol: A, args: Vec<Expr<T>>) -> Symbol<A, T> {
         Symbol {
             symbol: symbol,
@@ -54,16 +67,11 @@ impl<A:Alphabet, T:NumType> Symbol<A, T> {
         }
     }
 
-    pub fn evaluate(&self, args: &[Expr<T>]) -> Result<Symbol<A, T>, ExprError> {
-        let mut values = Vec::with_capacity(self.args.len());
-        for expr in self.args.iter() {
-            values.push(Expr::Const(try!(expr.evaluate(args))));
-        }
-        assert!(values.len() == self.args.len());
-        Ok(Symbol {
-            symbol: self.symbol.clone(),
-            args: values,
-        })
+    pub fn evaluate(&self, bindings: &[Expr<T>]) -> Result<Symbol<A, T>, ExprError> {
+        Symbol::from_iter(self.symbol.clone(),
+                          self.args
+                              .iter()
+                              .map(|expr| expr.evaluate(bindings).map(|ok| Expr::Const(ok))))
     }
 }
 
@@ -81,13 +89,18 @@ impl<A:Alphabet, T: NumType> fmt::Debug for SymbolString<A, T> {
 }
 
 impl<A:Alphabet, T:NumType> SymbolString<A, T> {
-    pub fn evaluate(&self, args: &[Expr<T>]) -> Result<SymbolString<A, T>, ExprError> {
-        let mut syms = Vec::with_capacity(self.0.len());
-        for sym in self.0.iter() {
-            syms.push(try!(sym.evaluate(args)));
+    fn from_iter<I, E>(symbol_iter: I) -> Result<SymbolString<A, T>, E>
+        where I: Iterator<Item = Result<Symbol<A, T>, E>>
+    {
+        let mut symbols = Vec::with_capacity(symbol_iter.size_hint().0);
+        for sym in symbol_iter.into_iter() {
+            symbols.push(try!(sym));
         }
-        assert!(syms.len() == self.0.len());
-        Ok(SymbolString(syms))
+        Ok(SymbolString(symbols))
+    }
+
+    pub fn evaluate(&self, bindings: &[Expr<T>]) -> Result<SymbolString<A, T>, ExprError> {
+        SymbolString::from_iter(self.0.iter().map(|sym| sym.evaluate(bindings)))
     }
 }
 
