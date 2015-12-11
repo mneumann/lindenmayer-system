@@ -11,17 +11,18 @@ fn branching_pattern_abop_1_9(maxiter: usize) {
     let axiom = SymbolString(vec![DSym::new_parametric('A', vec![Expr::Const(300.0)])]);
 
     let mut system = System::new();
+
     system.add_rule(Rule::new('A',
                               SymbolString(vec![
             DSym::new_parametric('F', vec![Expr::Arg(0)]),
-            DSym::new('['),
-            DSym::new('+'),
+            Symbolic::new('['),
+            Symbolic::new('+'),
             DSym::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
-            DSym::new(']'),
-            DSym::new('['),
-            DSym::new('-'),
+            Symbolic::new(']'),
+            Symbolic::new('['),
+            Symbolic::new('-'),
             DSym::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
-            DSym::new(']'),
+            Symbolic::new(']'),
         ])));
 
     println!("{:?}", system);

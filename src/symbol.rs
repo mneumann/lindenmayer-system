@@ -42,13 +42,6 @@ impl<A:Alphabet, T:NumType> Symbolic for DSym<A, T> {
 }
 
 impl<A:Alphabet, T:NumType> DSym<A, T> {
-    pub fn new(symbol: A) -> DSym<A, T> {
-        DSym {
-            symbol: symbol,
-            args: vec![],
-        }
-    }
-
     pub fn new_parametric(symbol: A, args: Vec<Expr<T>>) -> DSym<A, T> {
         DSym {
             symbol: symbol,

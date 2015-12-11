@@ -2,7 +2,7 @@ use turtle::{Canvas, Turtle};
 use std::fs::File;
 use std::env;
 use std::str::FromStr;
-pub use lindenmayer_system::{SymbolString, Expr, Rule, System};
+pub use lindenmayer_system::{SymbolString, Expr, Rule, System, Symbolic};
 pub use lindenmayer_system::symbol::DSym;
 
 pub fn num_iterations() -> usize {
@@ -42,7 +42,7 @@ pub fn draw(symstr: &SymbolString<DSym<char, f32>>,
 pub fn symstr(s: &str) -> SymbolString<DSym<char, f32>> {
     SymbolString(s.chars()
                   .filter(|&c| !c.is_whitespace())
-                  .map(|c| DSym::new(c))
+                  .map(|c| Symbolic::new(c))
                   .collect())
 }
 

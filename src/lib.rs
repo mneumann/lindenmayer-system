@@ -4,7 +4,7 @@
 pub mod expr;
 pub mod symbol;
 
-use std::fmt;
+use std::{fmt, iter};
 use expr::NumType;
 
 pub use expr::{Expr, Condition, ExprError};
@@ -27,6 +27,10 @@ pub trait Symbolic: Clone + PartialEq + fmt::Debug {
     fn args(&self) -> &[Expr<Self::T>];
 
     fn from_result_iter<I, E>(symbol: Self::A, args_iter: I) -> Result<Self, E> where I: Iterator<Item = Result<Expr<Self::T>, E>>;
+
+    fn new(symbol: Self::A) -> Self {
+        Self::from_iter(symbol, iter::empty())
+    }
 
     fn from_iter<I>(symbol: Self::A, args_iter: I) -> Self where I: Iterator<Item = Expr<Self::T>> {
         let res: Result<_, ()> = Self::from_result_iter(symbol, args_iter.map(|i| Ok(i)));
