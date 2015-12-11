@@ -1,4 +1,4 @@
-use super::{Alphabet, Symbolic, Expr};
+use super::{Alphabet, Symbol, Expr};
 use super::expr::NumType;
 use std::fmt;
 
@@ -15,7 +15,7 @@ impl<A:Alphabet, T:NumType> fmt::Debug for DSym<A, T> {
     }
 }
 
-impl<A:Alphabet, T:NumType> Symbolic for DSym<A, T> {
+impl<A:Alphabet, T:NumType> Symbol for DSym<A, T> {
     type A = A;
     type T = T;
 

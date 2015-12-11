@@ -17,7 +17,7 @@ impl Alphabet for char {}
 
 /// The common interface for Symbols. Basically this abstracts over
 /// the argument implementation.
-pub trait Symbolic: Clone + PartialEq + fmt::Debug {
+pub trait Symbol: Clone + PartialEq + fmt::Debug {
     type A: Alphabet;
 
     type T: NumType;
@@ -65,9 +65,9 @@ pub trait Symbolic: Clone + PartialEq + fmt::Debug {
 
 /// A list of Symbols.
 #[derive(PartialEq, Eq)]
-pub struct SymbolString<S:Symbolic>(pub Vec<S>);
+pub struct SymbolString<S:Symbol>(pub Vec<S>);
 
-impl<S:Symbolic> fmt::Debug for SymbolString<S> {
+impl<S:Symbol> fmt::Debug for SymbolString<S> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         for sym in self.0.iter() {
             try!(write!(f, "{:?}", sym));
@@ -76,7 +76,7 @@ impl<S:Symbolic> fmt::Debug for SymbolString<S> {
     }
 }
 
-impl<S:Symbolic> SymbolString<S> {
+impl<S:Symbol> SymbolString<S> {
     fn from_result_iter<I, E>(symbol_iter: I) -> Result<SymbolString<S>, E>
         where I: Iterator<Item = Result<S, E>>
     {
@@ -93,7 +93,7 @@ impl<S:Symbolic> SymbolString<S> {
 }
 
 #[derive(Debug)]
-pub struct Rule<S: Symbolic> {
+pub struct Rule<S: Symbol> {
     pub symbol: S::A,
     pub condition: Condition<S::T>,
     pub successor: SymbolString<S>,
@@ -107,7 +107,7 @@ pub enum RuleError {
     ExprFailed(ExprError),
 }
 
-impl<S:Symbolic> Rule<S> {
+impl<S:Symbol> Rule<S> {
     pub fn new(symbol: S::A, successor: SymbolString<S>) -> Rule<S> {
         Rule {
             symbol: symbol,
@@ -168,11 +168,11 @@ fn test_rule_apply() {
 }
 
 #[derive(Debug)]
-pub struct System<S: Symbolic> {
+pub struct System<S: Symbol> {
     rules: Vec<Rule<S>>,
 }
 
-impl<S:Symbolic> System<S> {
+impl<S:Symbol> System<S> {
     pub fn new() -> System<S> {
         System { rules: vec![] }
     }
