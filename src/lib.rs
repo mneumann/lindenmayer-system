@@ -8,7 +8,6 @@ use std::fmt;
 use expr::NumType;
 
 pub use expr::{Expr, Condition, ExprError};
-pub use symbol::Symbol;
 
 /// Used to name symbols and variables.
 pub trait Alphabet: fmt::Display + fmt::Debug + PartialEq + Eq + Clone {}
@@ -146,17 +145,17 @@ impl<S:Symbolic> Rule<S> {
 
 #[test]
 fn test_rule_apply() {
-    use symbol::Symbol;
-    let p = Symbol::new_parametric("P", vec![Expr::Const(123u32)]);
+    use symbol::DSym;
+    let p = DSym::new_parametric("P", vec![Expr::Const(123u32)]);
     let rule = Rule::new("A", SymbolString(vec![p.clone()]));
     assert_eq!(Err(RuleError::SymbolMismatch),
-               rule.apply(&Symbol::new("P")));
-    assert_eq!(Ok(SymbolString(vec![Symbol::new_parametric("P", vec![Expr::Const(123u32)])])),
-               rule.apply(&Symbol::new("A")));
+               rule.apply(&DSym::new("P")));
+    assert_eq!(Ok(SymbolString(vec![DSym::new_parametric("P", vec![Expr::Const(123u32)])])),
+               rule.apply(&DSym::new("A")));
 
     let rule = Rule::new_conditional("A", SymbolString(vec![p.clone()]), Condition::False);
     assert_eq!(Err(RuleError::ConditionFalse),
-               rule.apply(&Symbol::new("A")));
+               rule.apply(&DSym::new("A")));
 }
 
 #[derive(Debug)]

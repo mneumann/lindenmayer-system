@@ -8,20 +8,20 @@ use helper::*;
 
 fn branching_pattern_abop_1_9(maxiter: usize) {
     const R: f32 = 1.456;
-    let axiom = SymbolString(vec![Symbol::new_parametric('A', vec![Expr::Const(300.0)])]);
+    let axiom = SymbolString(vec![DSym::new_parametric('A', vec![Expr::Const(300.0)])]);
 
     let mut system = System::new();
     system.add_rule(Rule::new('A',
                               SymbolString(vec![
-            Symbol::new_parametric('F', vec![Expr::Arg(0)]),
-            Symbol::new('['),
-            Symbol::new('+'),
-            Symbol::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
-            Symbol::new(']'),
-            Symbol::new('['),
-            Symbol::new('-'),
-            Symbol::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
-            Symbol::new(']'),
+            DSym::new_parametric('F', vec![Expr::Arg(0)]),
+            DSym::new('['),
+            DSym::new('+'),
+            DSym::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
+            DSym::new(']'),
+            DSym::new('['),
+            DSym::new('-'),
+            DSym::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
+            DSym::new(']'),
         ])));
 
     println!("{:?}", system);
