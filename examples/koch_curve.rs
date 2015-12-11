@@ -7,7 +7,7 @@ use helper::*;
 fn koch_curve(maxiter: usize) {
     let axiom = symstr("F++F++F");
 
-    let mut system: System<char, f32> = System::new();
+    let mut system = System::new();
     system.add_rule(rule('F', "F-F++F-F"));
     println!("{:?}", system);
 

@@ -8,7 +8,7 @@ pub fn num_iterations() -> usize {
     usize::from_str(&env::args().nth(1).unwrap_or("0".to_string())).unwrap()
 }
 
-pub fn draw(symstr: &SymbolString<char, f32>,
+pub fn draw(symstr: &SymbolString<Symbol<char, f32>>,
             init_direction: f32,
             default_angle: f32,
             default_distance: f32,
@@ -38,13 +38,13 @@ pub fn draw(symstr: &SymbolString<char, f32>,
     t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
 }
 
-pub fn symstr(s: &str) -> SymbolString<char, f32> {
+pub fn symstr(s: &str) -> SymbolString<Symbol<char, f32>> {
     SymbolString(s.chars()
                   .filter(|&c| !c.is_whitespace())
                   .map(|c| Symbol::new(c))
                   .collect())
 }
 
-pub fn rule(sym: char, successor: &str) -> Rule<char, f32> {
+pub fn rule(sym: char, successor: &str) -> Rule<Symbol<char, f32>> {
     Rule::new(sym, symstr(successor))
 }
