@@ -14,6 +14,11 @@ pub trait Alphabet: fmt::Display + fmt::Debug + PartialEq + Eq + Clone {}
 
 impl Alphabet for &'static str {}
 impl Alphabet for char {}
+impl Alphabet for u8 {}
+impl Alphabet for u16 {}
+impl Alphabet for u32 {}
+impl Alphabet for u64 {}
+impl Alphabet for usize {}
 
 /// The common interface for Symbols. Basically this abstracts over
 /// the argument implementation.
