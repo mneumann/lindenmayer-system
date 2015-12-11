@@ -97,7 +97,7 @@ impl<S:Symbol> SymbolString<S> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Rule<S: Symbol> {
     pub symbol: S::A,
     pub condition: Condition<S::T>,
@@ -172,7 +172,7 @@ fn test_rule_apply() {
                rule.apply(&DSym::new("A")));
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct System<S: Symbol> {
     rules: Vec<Rule<S>>,
 }
