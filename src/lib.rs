@@ -9,10 +9,21 @@ use expr::NumType;
 pub use expr::{Expr, Condition, ExprError};
 
 /// Used to name symbols and variables.
-pub trait Alphabet: fmt::Display + fmt::Debug + Eq + PartialEq + Clone {}
+pub trait Alphabet: fmt::Display + fmt::Debug + PartialEq + Eq + Clone {}
 
 impl Alphabet for &'static str {}
 impl Alphabet for char {}
+
+/// The common interface for Symbols. Basically this abstracts over
+/// the argument implementation.
+pub trait Symbolic<A: Alphabet, T: NumType>: fmt::Debug + Clone + PartialEq {
+    fn symbol(&self) -> &A;
+    fn from_iter<I, E>(symbol: A, args_iter: I) -> Result<Self, E> where I: Iterator<Item = Result<Expr<T>, E>>;
+    fn evaluate(&self, bindings: &[Expr<T>]) -> Result<Self, ExprError>;
+}
+
+
+
 
 /// A parametric symbol
 #[derive(Clone, PartialEq, Eq)]
@@ -39,12 +50,9 @@ impl<A:Alphabet, T:NumType> fmt::Debug for Symbol<A, T> {
     }
 }
 
-impl<A:Alphabet, T:NumType> Symbol<A, T> {
-    pub fn new(symbol: A) -> Symbol<A, T> {
-        Symbol {
-            symbol: symbol,
-            args: vec![],
-        }
+impl<A:Alphabet, T:NumType> Symbolic<A,T> for Symbol<A, T> {
+    fn symbol(&self) -> &A {
+        &self.symbol
     }
 
     fn from_iter<I, E>(symbol: A, args_iter: I) -> Result<Symbol<A, T>, E>
@@ -60,18 +68,28 @@ impl<A:Alphabet, T:NumType> Symbol<A, T> {
         })
     }
 
+    fn evaluate(&self, bindings: &[Expr<T>]) -> Result<Symbol<A, T>, ExprError> {
+        Symbol::from_iter(self.symbol.clone(),
+                          self.args
+                              .iter()
+                              .map(|expr| expr.evaluate(bindings).map(|ok| Expr::Const(ok))))
+    }
+
+}
+
+impl<A:Alphabet, T:NumType> Symbol<A, T> {
+    pub fn new(symbol: A) -> Symbol<A, T> {
+        Symbol {
+            symbol: symbol,
+            args: vec![],
+        }
+    }
+
     pub fn new_parametric(symbol: A, args: Vec<Expr<T>>) -> Symbol<A, T> {
         Symbol {
             symbol: symbol,
             args: args,
         }
-    }
-
-    pub fn evaluate(&self, bindings: &[Expr<T>]) -> Result<Symbol<A, T>, ExprError> {
-        Symbol::from_iter(self.symbol.clone(),
-                          self.args
-                              .iter()
-                              .map(|expr| expr.evaluate(bindings).map(|ok| Expr::Const(ok))))
     }
 }
 
