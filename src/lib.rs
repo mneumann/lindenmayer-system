@@ -69,7 +69,7 @@ pub trait Symbol: Clone + PartialEq + fmt::Debug {
 }
 
 /// A list of Symbols.
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Clone)]
 pub struct SymbolString<S:Symbol>(pub Vec<S>);
 
 impl<S:Symbol> fmt::Debug for SymbolString<S> {
