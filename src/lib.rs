@@ -10,7 +10,7 @@ use expr::NumType;
 pub use expr::{Expr, Condition, ExprError};
 
 /// Used to name symbols and variables.
-pub trait Alphabet: fmt::Display + fmt::Debug + PartialEq + Eq + Clone {}
+pub trait Alphabet: fmt::Debug + PartialEq + Eq + Clone {}
 
 impl Alphabet for &'static str {}
 impl Alphabet for char {}
@@ -52,7 +52,7 @@ pub trait Symbol: Clone + PartialEq + fmt::Debug {
 
     fn debug_fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let args = self.args();
-        try!(write!(f, "{}", *self.symbol()));
+        try!(write!(f, "{:?}", *self.symbol()));
         if args.is_empty() {
             return Ok(());
         }
