@@ -30,6 +30,9 @@ pub enum Expr<T: NumType> {
     Sub(Box<Expr<T>>, Box<Expr<T>>),
     Mul(Box<Expr<T>>, Box<Expr<T>>),
     Div(Box<Expr<T>>, Box<Expr<T>>),
+
+    // Safe division with x/0 = 0.0
+    Divz(Box<Expr<T>>, Box<Expr<T>>),
 }
 
 impl<T:NumType> fmt::Debug for Expr<T> {
@@ -41,6 +44,7 @@ impl<T:NumType> fmt::Debug for Expr<T> {
             &Expr::Sub(ref op1, ref op2) => write!(f, "({:?}-{:?})", op1, op2),
             &Expr::Mul(ref op1, ref op2) => write!(f, "{:?}*{:?}", op1, op2),
             &Expr::Div(ref op1, ref op2) => write!(f, "{:?}/{:?}", op1, op2),
+            &Expr::Divz(ref op1, ref op2) => write!(f, "{:?}\\{:?}", op1, op2),
         }
     }
 }
@@ -70,6 +74,15 @@ impl<T:NumType> Expr<T> {
                     return Err(ExprError::DivByZero);
                 }
                 a / b
+            }
+            Expr::Divz(ref e1, ref e2) => {
+                let a = try!(e1.evaluate(args));
+                let b = try!(e2.evaluate(args));
+                if b == T::zero() {
+                    b
+                } else {
+                    a / b
+                }
             }
         })
     }
@@ -111,6 +124,12 @@ impl<T:NumType> Condition<T> {
                 try!(e1.evaluate(args)) >= try!(e2.evaluate(args)),
         })
     }
+}
+
+#[test]
+fn test_expr_divz() {
+    let expr = Expr::Divz(box Expr::Const(1.0), box Expr::Const(0.0));
+    assert_eq!(Ok(0.0), expr.evaluate(&[]));
 }
 
 #[test]
