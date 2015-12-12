@@ -1,9 +1,9 @@
 use std::fmt;
 use std::ops;
-use std::num::Zero;
+use std::num::{Zero, One};
 use std::cmp::{PartialEq, PartialOrd};
 
-pub trait NumType: fmt::Debug+Clone+Zero+ops::Add<Output=Self>+ops::Sub<Output=Self>+ops::Mul<Output=Self>+ops::Div<Output=Self>+PartialEq+PartialOrd+Default {}
+pub trait NumType: fmt::Debug+Clone+Zero+One+ops::Add<Output=Self>+ops::Sub<Output=Self>+ops::Mul<Output=Self>+ops::Div<Output=Self>+PartialEq+PartialOrd+Default {}
 
 impl NumType for f32 {}
 impl NumType for f64 {}
@@ -33,9 +33,16 @@ pub enum Expr<T: NumType> {
 
     // Safe division with x/0 = 0.0
     Divz(Box<Expr<T>>, Box<Expr<T>>),
+
+    // Reciprocal (1 / x).
+    Recip(Box<Expr<T>>),
+
+    // Reciprocal using safe division
+    Recipz(Box<Expr<T>>),
 }
 
-impl<T:NumType> fmt::Debug for Expr<T> {
+
+impl<T: NumType> fmt::Debug for Expr<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Expr::Const(ref c) => write!(f, "{:?}", c),
@@ -45,11 +52,13 @@ impl<T:NumType> fmt::Debug for Expr<T> {
             &Expr::Mul(ref op1, ref op2) => write!(f, "{:?}*{:?}", op1, op2),
             &Expr::Div(ref op1, ref op2) => write!(f, "{:?}/{:?}", op1, op2),
             &Expr::Divz(ref op1, ref op2) => write!(f, "{:?}\\{:?}", op1, op2),
+            &Expr::Recip(ref op) => write!(f, "{:?}/{:?}", T::one(), op),
+            &Expr::Recipz(ref op) => write!(f, "{:?}\\{:?}", T::one(), op),
         }
     }
 }
 
-impl<T:NumType> Expr<T> {
+impl<T: NumType> Expr<T> {
     pub fn value(&self) -> Result<T, ExprError> {
         if let &Expr::Const(ref c) = self {
             Ok(c.clone())
@@ -60,28 +69,42 @@ impl<T:NumType> Expr<T> {
 
     pub fn evaluate(&self, args: &[Expr<T>]) -> Result<T, ExprError> {
         Ok(match *self {
-            Expr::Arg(n) => {
-                try!(try!(args.get(n).ok_or(ExprError::InvalidArg)).value())
-            }
+            Expr::Arg(n) => try!(try!(args.get(n).ok_or(ExprError::InvalidArg)).value()),
             Expr::Const(ref c) => c.clone(),
             Expr::Add(ref e1, ref e2) => try!(e1.evaluate(args)) + try!(e2.evaluate(args)),
             Expr::Sub(ref e1, ref e2) => try!(e1.evaluate(args)) - try!(e2.evaluate(args)),
             Expr::Mul(ref e1, ref e2) => try!(e1.evaluate(args)) * try!(e2.evaluate(args)),
             Expr::Div(ref e1, ref e2) => {
                 let a = try!(e1.evaluate(args));
-                let b = try!(e2.evaluate(args));
-                if b == T::zero() {
+                let div = try!(e2.evaluate(args));
+                if div == T::zero() {
                     return Err(ExprError::DivByZero);
                 }
-                a / b
+                a / div
             }
             Expr::Divz(ref e1, ref e2) => {
                 let a = try!(e1.evaluate(args));
-                let b = try!(e2.evaluate(args));
-                if b == T::zero() {
-                    b
+                let div = try!(e2.evaluate(args));
+                if div == T::zero() {
+                    div
                 } else {
-                    a / b
+                    a / div
+                }
+            }
+            Expr::Recip(ref e1) => {
+                let div = try!(e1.evaluate(args));
+                if div == T::zero() {
+                    return Err(ExprError::DivByZero);
+                } else {
+                    T::one() / div
+                }
+            }
+            Expr::Recipz(ref e1) => {
+                let div = try!(e1.evaluate(args));
+                if div == T::zero() {
+                    div
+                } else {
+                    T::one() / div
                 }
             }
         })
@@ -107,7 +130,7 @@ pub enum Condition<T: NumType> {
     GreaterEqual(Box<Expr<T>>, Box<Expr<T>>),
 }
 
-impl<T:NumType> Condition<T> {
+impl<T: NumType> Condition<T> {
     pub fn evaluate(&self, args: &[Expr<T>]) -> Result<bool, ExprError> {
         Ok(match *self {
             Condition::True => true,
@@ -118,10 +141,12 @@ impl<T:NumType> Condition<T> {
             Condition::Equal(ref e1, ref e2) => try!(e1.evaluate(args)) == try!(e2.evaluate(args)),
             Condition::Less(ref e1, ref e2) => try!(e1.evaluate(args)) < try!(e2.evaluate(args)),
             Condition::Greater(ref e1, ref e2) => try!(e1.evaluate(args)) > try!(e2.evaluate(args)),
-            Condition::LessEqual(ref e1, ref e2) =>
-                try!(e1.evaluate(args)) <= try!(e2.evaluate(args)),
-            Condition::GreaterEqual(ref e1, ref e2) =>
-                try!(e1.evaluate(args)) >= try!(e2.evaluate(args)),
+            Condition::LessEqual(ref e1, ref e2) => {
+                try!(e1.evaluate(args)) <= try!(e2.evaluate(args))
+            }
+            Condition::GreaterEqual(ref e1, ref e2) => {
+                try!(e1.evaluate(args)) >= try!(e2.evaluate(args))
+            }
         })
     }
 }
@@ -130,6 +155,18 @@ impl<T:NumType> Condition<T> {
 fn test_expr_divz() {
     let expr = Expr::Divz(box Expr::Const(1.0), box Expr::Const(0.0));
     assert_eq!(Ok(0.0), expr.evaluate(&[]));
+}
+
+#[test]
+fn test_expr_recipz() {
+    let expr = Expr::Recipz(box Expr::Const(0.0));
+    assert_eq!(Ok(0.0), expr.evaluate(&[]));
+
+    let expr = Expr::Recipz(box Expr::Const(1.0));
+    assert_eq!(Ok(1.0), expr.evaluate(&[]));
+
+    let expr = Expr::Recipz(box Expr::Const(0.5));
+    assert_eq!(Ok(2.0), expr.evaluate(&[]));
 }
 
 #[test]
