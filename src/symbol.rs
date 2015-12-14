@@ -9,13 +9,13 @@ pub struct DSym<A: Alphabet, T: NumType> {
     args: Vec<Expr<T>>,
 }
 
-impl<A:Alphabet, T:NumType> fmt::Debug for DSym<A, T> {
+impl<A: Alphabet, T: NumType> fmt::Debug for DSym<A, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.debug_fmt(f)
     }
 }
 
-impl<A:Alphabet, T:NumType> Symbol for DSym<A, T> {
+impl<A: Alphabet, T: NumType> Symbol for DSym<A, T> {
     type A = A;
     type T = T;
 
@@ -41,7 +41,7 @@ impl<A:Alphabet, T:NumType> Symbol for DSym<A, T> {
     }
 }
 
-impl<A:Alphabet, T:NumType> DSym<A, T> {
+impl<A: Alphabet, T: NumType> DSym<A, T> {
     pub fn new_parametric(symbol: A, args: Vec<Expr<T>>) -> DSym<A, T> {
         DSym {
             symbol: symbol,
@@ -57,22 +57,22 @@ pub struct Sym1<A: Alphabet, T: NumType> {
     args: [Expr<T>; 1],
 }
 
-impl<A:Alphabet, T:NumType> Clone for Sym1<A, T> {
+impl<A: Alphabet, T: NumType> Clone for Sym1<A, T> {
     fn clone(&self) -> Self {
         Sym1 {
             symbol: self.symbol.clone(),
-            args: [self.args[0].clone()]
+            args: [self.args[0].clone()],
         }
     }
 }
 
-impl<A:Alphabet, T:NumType> fmt::Debug for Sym1<A, T> {
+impl<A: Alphabet, T: NumType> fmt::Debug for Sym1<A, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.debug_fmt(f)
     }
 }
 
-impl<A:Alphabet, T:NumType> Symbol for Sym1<A, T> {
+impl<A: Alphabet, T: NumType> Symbol for Sym1<A, T> {
     type A = A;
     type T = T;
 
@@ -93,12 +93,12 @@ impl<A:Alphabet, T:NumType> Symbol for Sym1<A, T> {
 
         Ok(Sym1 {
             symbol: symbol,
-            args: [arg1]
+            args: [arg1],
         })
     }
 }
 
-impl<A:Alphabet, T:NumType> Sym1<A, T> {
+impl<A: Alphabet, T: NumType> Sym1<A, T> {
     pub fn new_parametric(symbol: A, args: (Expr<T>,)) -> Sym1<A, T> {
         Sym1 {
             symbol: symbol,
@@ -114,22 +114,22 @@ pub struct Sym2<A: Alphabet, T: NumType> {
     args: [Expr<T>; 2],
 }
 
-impl<A:Alphabet, T:NumType> Clone for Sym2<A, T> {
+impl<A: Alphabet, T: NumType> Clone for Sym2<A, T> {
     fn clone(&self) -> Self {
         Sym2 {
             symbol: self.symbol.clone(),
-            args: [self.args[0].clone(), self.args[1].clone()]
+            args: [self.args[0].clone(), self.args[1].clone()],
         }
     }
 }
 
-impl<A:Alphabet, T:NumType> fmt::Debug for Sym2<A, T> {
+impl<A: Alphabet, T: NumType> fmt::Debug for Sym2<A, T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.debug_fmt(f)
     }
 }
 
-impl<A:Alphabet, T:NumType> Symbol for Sym2<A, T> {
+impl<A: Alphabet, T: NumType> Symbol for Sym2<A, T> {
     type A = A;
     type T = T;
 
@@ -151,12 +151,12 @@ impl<A:Alphabet, T:NumType> Symbol for Sym2<A, T> {
 
         Ok(Sym2 {
             symbol: symbol,
-            args: [arg1, arg2]
+            args: [arg1, arg2],
         })
     }
 }
 
-impl<A:Alphabet, T:NumType> Sym2<A, T> {
+impl<A: Alphabet, T: NumType> Sym2<A, T> {
     pub fn new_parametric(symbol: A, args: (Expr<T>, Expr<T>)) -> Sym2<A, T> {
         Sym2 {
             symbol: symbol,

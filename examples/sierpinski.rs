@@ -18,7 +18,7 @@ fn sierpinski(maxiter: usize) {
     let mut system = System::new();
     system.add_rule(rule('A', "F"));
     system.add_rule(rule('B', "F"));
-    let (after, _iters) = system.develop_step(&after);
+    let (after, _iters) = system.develop_next(&after);
 
     draw(&after,
          -90.0,
