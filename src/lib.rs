@@ -224,14 +224,19 @@ impl<S: Symbol> System<S> {
     }
 }
 
+/// Apply first matching rule and return expanded successor.
+pub fn apply_first_rule<S:Symbol>(rules: &[Rule<S>], sym: &S) -> Option<SymbolString<S>> {
+    for rule in rules {
+        if let Ok(successor) = rule.apply(sym) {
+            return Some(successor);
+        }
+    }
+    return None;
+}
+
 impl<S: Symbol> LSystem<S> for System<S> {
     /// Apply first matching rule and return expanded successor.
     fn apply_first_rule(&self, sym: &S) -> Option<SymbolString<S>> {
-        for rule in self.rules.iter() {
-            if let Ok(successor) = rule.apply(sym) {
-                return Some(successor);
-            }
-        }
-        return None;
+        apply_first_rule(&self.rules, sym)
     }
 }
