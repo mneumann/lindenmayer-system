@@ -124,10 +124,10 @@ impl<S: Symbol> Rule<S> {
         }
     }
 
-    pub fn new_conditional(symbol: S::A,
-                           successor: SymbolString<S>,
-                           condition: Condition<S::T>)
-                           -> Rule<S> {
+    pub fn new_with_condition(symbol: S::A,
+                              successor: SymbolString<S>,
+                              condition: Condition<S::T>)
+                              -> Rule<S> {
         Rule {
             symbol: symbol,
             condition: condition,
@@ -165,7 +165,7 @@ fn test_rule_apply() {
     assert_eq!(Ok(SymbolString(vec![DSym::new_parametric("P", vec![Expr::Const(123u32)])])),
                rule.apply(&DSym::new("A")));
 
-    let rule = Rule::new_conditional("A", SymbolString(vec![p.clone()]), Condition::False);
+    let rule = Rule::new_with_condition("A", SymbolString(vec![p.clone()]), Condition::False);
     assert_eq!(Err(RuleError::ConditionFalse), rule.apply(&DSym::new("A")));
 }
 
@@ -225,7 +225,7 @@ impl<S: Symbol> System<S> {
 }
 
 /// Apply first matching rule and return expanded successor.
-pub fn apply_first_rule<S:Symbol>(rules: &[Rule<S>], sym: &S) -> Option<SymbolString<S>> {
+pub fn apply_first_rule<S: Symbol>(rules: &[Rule<S>], sym: &S) -> Option<SymbolString<S>> {
     for rule in rules {
         if let Ok(successor) = rule.apply(sym) {
             return Some(successor);
