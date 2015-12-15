@@ -29,6 +29,8 @@ pub trait Symbol: Clone + PartialEq + fmt::Debug {
 
     fn symbol(&self) -> &Self::A;
 
+    fn set_symbol(&mut self, symbol: Self::A);
+
     fn args(&self) -> &[Expr<Self::T>];
 
     fn from_result_iter<I, E>(symbol: Self::A, args_iter: I) -> Result<Self, E>

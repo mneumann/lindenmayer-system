@@ -23,6 +23,10 @@ impl<A: Alphabet, T: NumType> Symbol for DSym<A, T> {
         &self.symbol
     }
 
+    fn set_symbol(&mut self, symbol: A) {
+        self.symbol = symbol;
+    }
+
     fn args(&self) -> &[Expr<T>] {
         &self.args[..]
     }
@@ -80,6 +84,10 @@ impl<A: Alphabet, T: NumType> Symbol for Sym1<A, T> {
         &self.symbol
     }
 
+    fn set_symbol(&mut self, symbol: A) {
+        self.symbol = symbol;
+    }
+
     fn args(&self) -> &[Expr<T>] {
         &self.args[..]
     }
@@ -135,6 +143,10 @@ impl<A: Alphabet, T: NumType> Symbol for Sym2<A, T> {
 
     fn symbol(&self) -> &A {
         &self.symbol
+    }
+
+    fn set_symbol(&mut self, symbol: A) {
+        self.symbol = symbol;
     }
 
     fn args(&self) -> &[Expr<T>] {
