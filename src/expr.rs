@@ -45,7 +45,7 @@ impl<'a, T: NumType> Into<Sexp> for &'a Expr<T> {
     fn into(self) -> Sexp {
         match self {
             &Expr::Const(n) => n.into(),
-            &Expr::Arg(n) => Sexp::from(("@", n)),
+            &Expr::Arg(n) => Sexp::from(format!("${}", n)),
             &Expr::Add(ref a, ref b) => {
                 Sexp::from(("+",
                             Into::<Sexp>::into(a.as_ref()),
@@ -81,7 +81,7 @@ impl<T: NumType> fmt::Debug for Expr<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
             &Expr::Const(ref c) => write!(f, "{:?}", c),
-            &Expr::Arg(num) => write!(f, "a{}", num),
+            &Expr::Arg(num) => write!(f, "${}", num),
             &Expr::Add(ref op1, ref op2) => write!(f, "({:?}+{:?})", op1, op2),
             &Expr::Sub(ref op1, ref op2) => write!(f, "({:?}-{:?})", op1, op2),
             &Expr::Mul(ref op1, ref op2) => write!(f, "{:?}*{:?}", op1, op2),
