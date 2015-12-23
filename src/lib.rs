@@ -1,6 +1,8 @@
 #![feature(box_syntax)]
 #![feature(zero_one)]
 
+extern crate asexp;
+
 pub mod expr;
 pub mod symbol;
 

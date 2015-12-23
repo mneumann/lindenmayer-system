@@ -2,9 +2,9 @@ use std::fmt;
 use std::ops;
 use std::num::{Zero, One};
 use std::cmp::{PartialEq, PartialOrd};
+use asexp::Sexp;
 
-pub trait NumType: fmt::Debug+Clone+Zero+One+ops::Add<Output=Self>+ops::Sub<Output=Self>+ops::Mul<Output=Self>+ops::Div<Output=Self>+PartialEq+PartialOrd+Default {}
-
+pub trait NumType: fmt::Debug+Copy+Clone+Zero+One+ops::Add<Output=Self>+ops::Sub<Output=Self>+ops::Mul<Output=Self>+ops::Div<Output=Self>+PartialEq+PartialOrd+Default+Into<Sexp> {}
 impl NumType for f32 {}
 impl NumType for f64 {}
 impl NumType for u32 {}
@@ -41,6 +41,41 @@ pub enum Expr<T: NumType> {
     Recipz(Box<Expr<T>>),
 }
 
+impl<'a, T: NumType> Into<Sexp> for &'a Expr<T> {
+    fn into(self) -> Sexp {
+        match self {
+            &Expr::Const(n) => n.into(),
+            &Expr::Arg(n) => Sexp::from(("@", n)),
+            &Expr::Add(ref a, ref b) => {
+                Sexp::from(("+",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Expr::Sub(ref a, ref b) => {
+                Sexp::from(("-",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Expr::Mul(ref a, ref b) => {
+                Sexp::from(("*",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Expr::Div(ref a, ref b) => {
+                Sexp::from(("/",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Expr::Divz(ref a, ref b) => {
+                Sexp::from(("divz",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Expr::Recip(ref a) => Sexp::from(("recip", Into::<Sexp>::into(a.as_ref()))),
+            &Expr::Recipz(ref a) => Sexp::from(("recipz", Into::<Sexp>::into(a.as_ref()))),
+        }
+    }
+}
 
 impl<T: NumType> fmt::Debug for Expr<T> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
@@ -129,6 +164,52 @@ pub enum Condition<T: NumType> {
     LessEqual(Box<Expr<T>>, Box<Expr<T>>),
     GreaterEqual(Box<Expr<T>>, Box<Expr<T>>),
 }
+
+impl<'a, T: NumType> Into<Sexp> for &'a Condition<T> {
+    fn into(self) -> Sexp {
+        match self {
+            &Condition::True => Sexp::from("true"),
+            &Condition::False => Sexp::from("false"),
+            &Condition::Not(ref a) => Sexp::from(("not", Into::<Sexp>::into(a.as_ref()))),
+            &Condition::And(ref a, ref b) => {
+                Sexp::from(("and",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Condition::Or(ref a, ref b) => {
+                Sexp::from(("or",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Condition::Equal(ref a, ref b) => {
+                Sexp::from(("==",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Condition::Less(ref a, ref b) => {
+                Sexp::from(("<",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Condition::Greater(ref a, ref b) => {
+                Sexp::from((">",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Condition::LessEqual(ref a, ref b) => {
+                Sexp::from(("<=",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+            &Condition::GreaterEqual(ref a, ref b) => {
+                Sexp::from((">=",
+                            Into::<Sexp>::into(a.as_ref()),
+                            Into::<Sexp>::into(b.as_ref())))
+            }
+        }
+    }
+}
+
 
 impl<T: NumType> Condition<T> {
     pub fn evaluate(&self, args: &[Expr<T>]) -> Result<bool, ExprError> {
