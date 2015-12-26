@@ -10,7 +10,7 @@ use std::{fmt, iter};
 use expression::{Expression, ExpressionError, Condition};
 use expression::num_expr::NumType;
 pub use expression::num_expr::NumExpr as Expr;
-use expression::cond::Cond;
+pub use expression::cond::Cond;
 
 /// Used to name symbols and variables.
 pub trait Alphabet: fmt::Debug + PartialEq + Eq + Clone {}
