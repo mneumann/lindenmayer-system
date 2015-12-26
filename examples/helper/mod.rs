@@ -39,7 +39,7 @@ pub fn draw(symstr: &SymbolString<DSym<char, f32>>,
     t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
 }
 
-pub fn symstr(s: &str) -> SymbolString<DSym<char, f32>> {
+fn symstr(s: &str) -> SymbolString<DSym<char, f32>> {
     SymbolString(s.chars()
                   .filter(|&c| !c.is_whitespace())
                   .map(|c| Symbol::new(c))
