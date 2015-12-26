@@ -39,13 +39,15 @@ pub fn draw(symstr: &SymbolString<DSym<char, f32>>,
     t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
 }
 
-fn symstr(s: &str) -> SymbolString<DSym<char, f32>> {
+#[allow(dead_code)]
+pub fn symstr(s: &str) -> SymbolString<DSym<char, f32>> {
     SymbolString(s.chars()
                   .filter(|&c| !c.is_whitespace())
                   .map(|c| Symbol::new(c))
                   .collect())
 }
 
+#[allow(dead_code)]
 pub fn rule(sym: char, successor: &str) -> Rule<DSym<char, f32>> {
     Rule::new(sym, symstr(successor))
 }

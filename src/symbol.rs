@@ -1,5 +1,6 @@
-use super::{Alphabet, Symbol, Expr};
-use super::expr::NumType;
+use super::{Alphabet, Symbol};
+use expression::num_expr::NumExpr as Expr;
+use expression::num_expr::NumType;
 use std::fmt;
 
 /// A parametric symbol

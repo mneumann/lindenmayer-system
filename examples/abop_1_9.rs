@@ -14,14 +14,14 @@ fn branching_pattern_abop_1_9(maxiter: usize) {
 
     system.add_rule(Rule::new('A',
                               SymbolString(vec![
-            DSym::new_parametric('F', vec![Expr::Arg(0)]),
+            DSym::new_parametric('F', vec![Expr::Var(0)]),
             Symbol::new('['),
             Symbol::new('+'),
-            DSym::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
+            DSym::new_parametric('A', vec![Expr::Div(box Expr::Var(0), box Expr::Const(R))]),
             Symbol::new(']'),
             Symbol::new('['),
             Symbol::new('-'),
-            DSym::new_parametric('A', vec![Expr::Div(box Expr::Arg(0), box Expr::Const(R))]),
+            DSym::new_parametric('A', vec![Expr::Div(box Expr::Var(0), box Expr::Const(R))]),
             Symbol::new(']'),
         ])));
 

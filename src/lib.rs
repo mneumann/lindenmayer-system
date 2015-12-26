@@ -1,15 +1,16 @@
 #![feature(box_syntax)]
-#![feature(zero_one)]
 
 extern crate asexp;
+extern crate expression;
 
-pub mod expr;
 pub mod symbol;
 
 use std::{fmt, iter};
-use expr::NumType;
 
-pub use expr::{Expr, Condition, ExprError};
+use expression::{Expression, ExpressionError, Condition};
+use expression::num_expr::NumType;
+pub use expression::num_expr::NumExpr as Expr;
+use expression::cond::Cond;
 
 /// Used to name symbols and variables.
 pub trait Alphabet: fmt::Debug + PartialEq + Eq + Clone {}
@@ -27,7 +28,7 @@ impl Alphabet for usize {}
 pub trait Symbol: Clone + PartialEq + fmt::Debug {
     type A: Alphabet;
 
-    type T: NumType;
+    type T: NumType + Default;
 
     fn symbol(&self) -> &Self::A;
 
@@ -49,7 +50,7 @@ pub trait Symbol: Clone + PartialEq + fmt::Debug {
         res.unwrap()
     }
 
-    fn evaluate(&self, bindings: &[Expr<Self::T>]) -> Result<Self, ExprError> {
+    fn evaluate(&self, bindings: &[Expr<Self::T>]) -> Result<Self, ExpressionError> {
         Self::from_result_iter((*self.symbol()).clone(),
                                self.args()
                                    .iter()
@@ -99,7 +100,7 @@ impl<S: Symbol> SymbolString<S> {
         Ok(SymbolString(symbols))
     }
 
-    pub fn evaluate(&self, bindings: &[Expr<S::T>]) -> Result<SymbolString<S>, ExprError> {
+    pub fn evaluate(&self, bindings: &[Expr<S::T>]) -> Result<SymbolString<S>, ExpressionError> {
         SymbolString::from_result_iter(self.0.iter().map(|sym| sym.evaluate(bindings)))
     }
 }
@@ -107,7 +108,7 @@ impl<S: Symbol> SymbolString<S> {
 #[derive(Debug, Clone)]
 pub struct Rule<S: Symbol> {
     pub symbol: S::A,
-    pub condition: Condition<S::T>,
+    pub condition: Cond<Expr<S::T>>,
     pub successor: SymbolString<S>,
 }
 
@@ -116,21 +117,21 @@ pub enum RuleError {
     SymbolMismatch,
     ConditionFalse,
     ConditionFailed,
-    ExprFailed(ExprError),
+    ExprFailed(ExpressionError),
 }
 
 impl<S: Symbol> Rule<S> {
     pub fn new(symbol: S::A, successor: SymbolString<S>) -> Rule<S> {
         Rule {
             symbol: symbol,
-            condition: Condition::True,
+            condition: Cond::True,
             successor: successor,
         }
     }
 
     pub fn new_with_condition(symbol: S::A,
                               successor: SymbolString<S>,
-                              condition: Condition<S::T>)
+                              condition: Cond<Expr<S::T>>)
                               -> Rule<S> {
         Rule {
             symbol: symbol,
@@ -169,7 +170,7 @@ fn test_rule_apply() {
     assert_eq!(Ok(SymbolString(vec![DSym::new_parametric("P", vec![Expr::Const(123u32)])])),
                rule.apply(&DSym::new("A")));
 
-    let rule = Rule::new_with_condition("A", SymbolString(vec![p.clone()]), Condition::False);
+    let rule = Rule::new_with_condition("A", SymbolString(vec![p.clone()]), Cond::False);
     assert_eq!(Err(RuleError::ConditionFalse), rule.apply(&DSym::new("A")));
 }
 
