@@ -6,5 +6,4 @@ authors = ["Michael Neumann <mneumann@ntecs.de>"]
 [dependencies]
 turtle = { git = "https://github.com/mneumann/turtle-rs.git" }
 asexp = { git = "https://github.com/mneumann/asexp-rs.git" }
-expression = { git = "https://github.com/mneumann/expression-rs.git" }
-
+expression = "0.1.0"
