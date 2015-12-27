@@ -347,3 +347,47 @@ pub trait ParametricSystem {
         return (current, max_iterations);
     }
 }
+
+/// Apply first matching rule and return expanded successor.
+pub fn apply_first_rule<R>(rules: &[R],
+                           sym: &<R as ParametricRule>::OutSym)
+                           -> Option<Vec<<R as ParametricRule>::OutSym>>
+    where R: ParametricRule
+{
+    for rule in rules {
+        if let Ok(successor) = rule.apply(sym) {
+            return Some(successor);
+        }
+    }
+    return None;
+}
+
+#[derive(Debug, Clone)]
+pub struct PSystem<R>
+    where R: ParametricRule
+{
+    rules: Vec<R>,
+}
+
+
+impl<R> PSystem<R> where R: ParametricRule
+{
+    pub fn new() -> PSystem<R> {
+        PSystem { rules: vec![] }
+    }
+
+    pub fn add_rule(&mut self, rule: R) {
+        self.rules.push(rule);
+    }
+}
+
+
+impl<R> ParametricSystem for PSystem<R> where R: ParametricRule
+{
+    type Rule = R;
+
+    /// Apply first matching rule and return expanded successor.
+    fn apply_first_rule(&self, sym: &<Self::Rule as ParametricRule>::OutSym) -> Option<Vec<<Self::Rule as ParametricRule>::OutSym>> {
+        apply_first_rule(&self.rules, sym)
+    }
+}
