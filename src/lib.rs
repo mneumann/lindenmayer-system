@@ -6,9 +6,6 @@ pub mod symbol;
 use std::{fmt, iter};
 
 use expression::{Expression, ExpressionError, Condition};
-use expression::num_expr::NumType;
-pub use expression::num_expr::NumExpr as Expr;
-pub use expression::cond::Cond;
 
 /// Used to name symbols and variables.
 pub trait Alphabet: fmt::Debug + PartialEq + Eq + Clone {}
@@ -25,34 +22,35 @@ impl Alphabet for usize {}
 /// the argument implementation.
 pub trait Symbol: Clone + PartialEq + fmt::Debug {
     type A: Alphabet;
-
-    type T: NumType + Default;
+    type Expr: Expression;
 
     fn symbol(&self) -> &Self::A;
 
     fn set_symbol(&mut self, symbol: Self::A);
 
-    fn args(&self) -> &[Expr<Self::T>];
+    fn args(&self) -> &[Self::Expr];
 
     fn from_result_iter<I, E>(symbol: Self::A, args_iter: I) -> Result<Self, E>
-        where I: Iterator<Item = Result<Expr<Self::T>, E>>;
+        where I: Iterator<Item = Result<Self::Expr, E>>;
 
     fn new(symbol: Self::A) -> Self {
         Self::from_iter(symbol, iter::empty())
     }
 
     fn from_iter<I>(symbol: Self::A, args_iter: I) -> Self
-        where I: Iterator<Item = Expr<Self::T>>
+        where I: Iterator<Item = Self::Expr>
     {
         let res: Result<_, ()> = Self::from_result_iter(symbol, args_iter.map(|i| Ok(i)));
         res.unwrap()
     }
 
-    fn evaluate(&self, bindings: &[Expr<Self::T>]) -> Result<Self, ExpressionError> {
+    fn evaluate(&self, bindings: &[Self::Expr]) -> Result<Self, ExpressionError> {
         Self::from_result_iter((*self.symbol()).clone(),
                                self.args()
                                    .iter()
-                                   .map(|expr| expr.evaluate(bindings).map(|ok| Expr::Const(ok))))
+                                   .map(|expr| {
+                                       expr.evaluate(bindings).map(|ok| Self::Expr::make_const(ok))
+                                   }))
 
     }
 
@@ -98,17 +96,11 @@ impl<S: Symbol> SymbolString<S> {
         Ok(SymbolString(symbols))
     }
 
-    pub fn evaluate(&self, bindings: &[Expr<S::T>]) -> Result<SymbolString<S>, ExpressionError> {
+    pub fn evaluate(&self, bindings: &[S::Expr]) -> Result<SymbolString<S>, ExpressionError> {
         SymbolString::from_result_iter(self.0.iter().map(|sym| sym.evaluate(bindings)))
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Rule<S: Symbol> {
-    pub symbol: S::A,
-    pub condition: Cond<Expr<S::T>>,
-    pub successor: SymbolString<S>,
-}
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum RuleError {
@@ -118,19 +110,21 @@ pub enum RuleError {
     ExprFailed(ExpressionError),
 }
 
-impl<S: Symbol> Rule<S> {
-    pub fn new(symbol: S::A, successor: SymbolString<S>) -> Rule<S> {
-        Rule {
-            symbol: symbol,
-            condition: Cond::True,
-            successor: successor,
-        }
-    }
+#[derive(Debug, Clone)]
+pub struct Rule<S, C>
+    where S: Symbol,
+          C: Condition<Expr = S::Expr>
+{
+    pub symbol: S::A,
+    pub condition: C,
+    pub successor: SymbolString<S>,
+}
 
-    pub fn new_with_condition(symbol: S::A,
-                              successor: SymbolString<S>,
-                              condition: Cond<Expr<S::T>>)
-                              -> Rule<S> {
+impl<S, C> Rule<S, C>
+    where S: Symbol,
+          C: Condition<Expr = S::Expr>
+{
+    pub fn new(symbol: S::A, condition: C, successor: SymbolString<S>) -> Rule<S, C> {
         Rule {
             symbol: symbol,
             condition: condition,
@@ -162,13 +156,15 @@ impl<S: Symbol> Rule<S> {
 #[test]
 fn test_rule_apply() {
     use symbol::DSym;
+    use expression::num_expr::NumExpr as Expr;
+    use expression::cond::Cond;
     let p = DSym::new_parametric("P", vec![Expr::Const(123u32)]);
-    let rule = Rule::new("A", SymbolString(vec![p.clone()]));
+    let rule = Rule::new("A", Cond::True, SymbolString(vec![p.clone()]));
     assert_eq!(Err(RuleError::SymbolMismatch), rule.apply(&DSym::new("P")));
     assert_eq!(Ok(SymbolString(vec![DSym::new_parametric("P", vec![Expr::Const(123u32)])])),
                rule.apply(&DSym::new("A")));
 
-    let rule = Rule::new_with_condition("A", SymbolString(vec![p.clone()]), Cond::False);
+    let rule = Rule::new("A", Cond::False, SymbolString(vec![p.clone()]));
     assert_eq!(Err(RuleError::ConditionFalse), rule.apply(&DSym::new("A")));
 }
 
@@ -213,22 +209,31 @@ pub trait LSystem<S: Symbol> {
 }
 
 #[derive(Debug, Clone)]
-pub struct System<S: Symbol> {
-    rules: Vec<Rule<S>>,
+pub struct System<S, C>
+    where S: Symbol,
+          C: Condition<Expr = S::Expr>
+{
+    rules: Vec<Rule<S, C>>,
 }
 
-impl<S: Symbol> System<S> {
-    pub fn new() -> System<S> {
+impl<S, C> System<S, C>
+    where S: Symbol,
+          C: Condition<Expr = S::Expr>
+{
+    pub fn new() -> System<S, C> {
         System { rules: vec![] }
     }
 
-    pub fn add_rule(&mut self, rule: Rule<S>) {
+    pub fn add_rule(&mut self, rule: Rule<S, C>) {
         self.rules.push(rule);
     }
 }
 
 /// Apply first matching rule and return expanded successor.
-pub fn apply_first_rule<S: Symbol>(rules: &[Rule<S>], sym: &S) -> Option<SymbolString<S>> {
+pub fn apply_first_rule<S, C>(rules: &[Rule<S, C>], sym: &S) -> Option<SymbolString<S>>
+    where S: Symbol,
+          C: Condition<Expr = S::Expr>
+{
     for rule in rules {
         if let Ok(successor) = rule.apply(sym) {
             return Some(successor);
@@ -237,7 +242,10 @@ pub fn apply_first_rule<S: Symbol>(rules: &[Rule<S>], sym: &S) -> Option<SymbolS
     return None;
 }
 
-impl<S: Symbol> LSystem<S> for System<S> {
+impl<S, C> LSystem<S> for System<S, C>
+    where S: Symbol,
+          C: Condition<Expr = S::Expr>
+{
     /// Apply first matching rule and return expanded successor.
     fn apply_first_rule(&self, sym: &S) -> Option<SymbolString<S>> {
         apply_first_rule(&self.rules, sym)

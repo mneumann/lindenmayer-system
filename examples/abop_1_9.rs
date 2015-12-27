@@ -2,6 +2,7 @@
 
 extern crate lindenmayer_system;
 extern crate turtle;
+extern crate expression;
 mod helper;
 
 use helper::*;
@@ -12,7 +13,7 @@ fn branching_pattern_abop_1_9(maxiter: usize) {
 
     let mut system = System::new();
 
-    system.add_rule(Rule::new('A',
+    system.add_rule(Rule::new('A', Cond::True,
                               SymbolString(vec![
             DSym::new_parametric('F', vec![Expr::Var(0)]),
             Symbol::new('['),

@@ -1,24 +1,23 @@
 use super::{Alphabet, Symbol};
-use expression::num_expr::NumExpr as Expr;
-use expression::num_expr::NumType;
+use expression::Expression;
 use std::fmt;
 
 /// A parametric symbol
 #[derive(Clone, PartialEq, Eq)]
-pub struct DSym<A: Alphabet, T: NumType> {
+pub struct DSym<A: Alphabet, Expr: Expression> {
     symbol: A,
-    args: Vec<Expr<T>>,
+    args: Vec<Expr>,
 }
 
-impl<A: Alphabet, T: NumType> fmt::Debug for DSym<A, T> {
+impl<A: Alphabet, Expr: Expression> fmt::Debug for DSym<A, Expr> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.debug_fmt(f)
     }
 }
 
-impl<A: Alphabet, T: NumType> Symbol for DSym<A, T> {
+impl<A: Alphabet, Expr: Expression> Symbol for DSym<A, Expr> {
     type A = A;
-    type T = T;
+    type Expr = Expr;
 
     fn symbol(&self) -> &A {
         &self.symbol
@@ -28,12 +27,12 @@ impl<A: Alphabet, T: NumType> Symbol for DSym<A, T> {
         self.symbol = symbol;
     }
 
-    fn args(&self) -> &[Expr<T>] {
+    fn args(&self) -> &[Self::Expr] {
         &self.args[..]
     }
 
-    fn from_result_iter<I, E>(symbol: A, args_iter: I) -> Result<DSym<A, T>, E>
-        where I: Iterator<Item = Result<Expr<T>, E>>
+    fn from_result_iter<I, E>(symbol: A, args_iter: I) -> Result<Self, E>
+        where I: Iterator<Item = Result<Self::Expr, E>>
     {
         let mut values = Vec::with_capacity(args_iter.size_hint().0);
         for expr in args_iter.into_iter() {
@@ -46,8 +45,8 @@ impl<A: Alphabet, T: NumType> Symbol for DSym<A, T> {
     }
 }
 
-impl<A: Alphabet, T: NumType> DSym<A, T> {
-    pub fn new_parametric(symbol: A, args: Vec<Expr<T>>) -> DSym<A, T> {
+impl<A: Alphabet, Expr: Expression> DSym<A, Expr> {
+    pub fn new_parametric(symbol: A, args: Vec<Expr>) -> DSym<A, Expr> {
         DSym {
             symbol: symbol,
             args: args,
@@ -57,12 +56,12 @@ impl<A: Alphabet, T: NumType> DSym<A, T> {
 
 /// A parametric 1-ary symbol
 #[derive(PartialEq, Eq)]
-pub struct Sym1<A: Alphabet, T: NumType> {
+pub struct Sym1<A: Alphabet, Expr: Expression> {
     symbol: A,
-    args: [Expr<T>; 1],
+    args: [Expr; 1],
 }
 
-impl<A: Alphabet, T: NumType> Clone for Sym1<A, T> {
+impl<A: Alphabet, Expr: Expression> Clone for Sym1<A, Expr> {
     fn clone(&self) -> Self {
         Sym1 {
             symbol: self.symbol.clone(),
@@ -71,15 +70,15 @@ impl<A: Alphabet, T: NumType> Clone for Sym1<A, T> {
     }
 }
 
-impl<A: Alphabet, T: NumType> fmt::Debug for Sym1<A, T> {
+impl<A: Alphabet, Expr: Expression> fmt::Debug for Sym1<A, Expr> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.debug_fmt(f)
     }
 }
 
-impl<A: Alphabet, T: NumType> Symbol for Sym1<A, T> {
+impl<A: Alphabet, Expr: Expression> Symbol for Sym1<A, Expr> {
     type A = A;
-    type T = T;
+    type Expr = Expr;
 
     fn symbol(&self) -> &A {
         &self.symbol
@@ -89,16 +88,17 @@ impl<A: Alphabet, T: NumType> Symbol for Sym1<A, T> {
         self.symbol = symbol;
     }
 
-    fn args(&self) -> &[Expr<T>] {
+    fn args(&self) -> &[Self::Expr] {
         &self.args[..]
     }
 
     fn from_result_iter<I, E>(symbol: A, args_iter: I) -> Result<Self, E>
-        where I: Iterator<Item = Result<Expr<T>, E>>
+        where I: Iterator<Item = Result<Self::Expr, E>>
     {
         let mut i = args_iter.into_iter();
 
-        let arg1 = try!(i.next().unwrap_or(Ok(Expr::Const(T::default()))));
+        // XXX: This should return an error instead of a default value!
+        let arg1 = try!(i.next().unwrap_or(Ok(Self::Expr::make_const(<Self::Expr as Expression>::Element::default()))));
 
         Ok(Sym1 {
             symbol: symbol,
@@ -107,8 +107,8 @@ impl<A: Alphabet, T: NumType> Symbol for Sym1<A, T> {
     }
 }
 
-impl<A: Alphabet, T: NumType> Sym1<A, T> {
-    pub fn new_parametric(symbol: A, args: (Expr<T>,)) -> Sym1<A, T> {
+impl<A: Alphabet, Expr: Expression> Sym1<A, Expr> {
+    pub fn new_parametric(symbol: A, args: (Expr,)) -> Sym1<A, Expr> {
         Sym1 {
             symbol: symbol,
             args: [args.0],
@@ -118,12 +118,12 @@ impl<A: Alphabet, T: NumType> Sym1<A, T> {
 
 /// A parametric 2-ary symbol
 #[derive(PartialEq, Eq)]
-pub struct Sym2<A: Alphabet, T: NumType> {
+pub struct Sym2<A: Alphabet, Expr: Expression> {
     symbol: A,
-    args: [Expr<T>; 2],
+    args: [Expr; 2],
 }
 
-impl<A: Alphabet, T: NumType> Clone for Sym2<A, T> {
+impl<A: Alphabet, Expr: Expression> Clone for Sym2<A, Expr> {
     fn clone(&self) -> Self {
         Sym2 {
             symbol: self.symbol.clone(),
@@ -132,15 +132,15 @@ impl<A: Alphabet, T: NumType> Clone for Sym2<A, T> {
     }
 }
 
-impl<A: Alphabet, T: NumType> fmt::Debug for Sym2<A, T> {
+impl<A: Alphabet, Expr: Expression> fmt::Debug for Sym2<A, Expr> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         self.debug_fmt(f)
     }
 }
 
-impl<A: Alphabet, T: NumType> Symbol for Sym2<A, T> {
+impl<A: Alphabet, Expr: Expression> Symbol for Sym2<A, Expr> {
     type A = A;
-    type T = T;
+    type Expr = Expr;
 
     fn symbol(&self) -> &A {
         &self.symbol
@@ -150,17 +150,18 @@ impl<A: Alphabet, T: NumType> Symbol for Sym2<A, T> {
         self.symbol = symbol;
     }
 
-    fn args(&self) -> &[Expr<T>] {
+    fn args(&self) -> &[Self::Expr] {
         &self.args[..]
     }
 
     fn from_result_iter<I, E>(symbol: A, args_iter: I) -> Result<Self, E>
-        where I: Iterator<Item = Result<Expr<T>, E>>
+        where I: Iterator<Item = Result<Self::Expr, E>>
     {
         let mut i = args_iter.into_iter();
 
-        let arg1 = try!(i.next().unwrap_or(Ok(Expr::Const(T::default()))));
-        let arg2 = try!(i.next().unwrap_or(Ok(Expr::Const(T::default()))));
+        // XXX: This should return an error instead of a default value!
+        let arg1 = try!(i.next().unwrap_or(Ok(Self::Expr::make_const(<Self::Expr as Expression>::Element::default()))));
+        let arg2 = try!(i.next().unwrap_or(Ok(Self::Expr::make_const(<Self::Expr as Expression>::Element::default()))));
 
         Ok(Sym2 {
             symbol: symbol,
@@ -169,8 +170,8 @@ impl<A: Alphabet, T: NumType> Symbol for Sym2<A, T> {
     }
 }
 
-impl<A: Alphabet, T: NumType> Sym2<A, T> {
-    pub fn new_parametric(symbol: A, args: (Expr<T>, Expr<T>)) -> Sym2<A, T> {
+impl<A: Alphabet, Expr: Expression> Sym2<A, Expr> {
+    pub fn new_parametric(symbol: A, args: (Expr, Expr)) -> Sym2<A, Expr> {
         Sym2 {
             symbol: symbol,
             args: [args.0, args.1],

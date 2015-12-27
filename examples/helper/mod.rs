@@ -2,14 +2,16 @@ use turtle::{Canvas, Turtle};
 use std::fs::File;
 use std::env;
 use std::str::FromStr;
-pub use lindenmayer_system::{SymbolString, Expr, Rule, System, LSystem, Symbol};
+pub use lindenmayer_system::{SymbolString, Rule, System, LSystem, Symbol};
 pub use lindenmayer_system::symbol::DSym;
+pub use expression::num_expr::NumExpr as Expr;
+pub use expression::cond::Cond;
 
 pub fn num_iterations() -> usize {
     usize::from_str(&env::args().nth(1).unwrap_or("0".to_string())).unwrap()
 }
 
-pub fn draw(symstr: &SymbolString<DSym<char, f32>>,
+pub fn draw(symstr: &SymbolString<DSym<char, Expr<f32>>>,
             init_direction: f32,
             default_angle: f32,
             default_distance: f32,
@@ -40,7 +42,7 @@ pub fn draw(symstr: &SymbolString<DSym<char, f32>>,
 }
 
 #[allow(dead_code)]
-pub fn symstr(s: &str) -> SymbolString<DSym<char, f32>> {
+pub fn symstr(s: &str) -> SymbolString<DSym<char, Expr<f32>>> {
     SymbolString(s.chars()
                   .filter(|&c| !c.is_whitespace())
                   .map(|c| Symbol::new(c))
@@ -48,6 +50,6 @@ pub fn symstr(s: &str) -> SymbolString<DSym<char, f32>> {
 }
 
 #[allow(dead_code)]
-pub fn rule(sym: char, successor: &str) -> Rule<DSym<char, f32>> {
-    Rule::new(sym, symstr(successor))
+pub fn rule(sym: char, successor: &str) -> Rule<DSym<char, Expr<f32>>, Cond<Expr<f32>>> {
+    Rule::new(sym, Cond::True, symstr(successor))
 }
