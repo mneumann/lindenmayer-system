@@ -1,2 +1,2 @@
 # lindenmayer-system
-Implement L-Systems in Rust
+Implements Parametric Lindenmayer-Systems (L-Systems) in Rust.
