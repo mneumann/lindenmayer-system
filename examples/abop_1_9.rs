@@ -9,22 +9,22 @@ use helper::*;
 
 fn branching_pattern_abop_1_9(maxiter: usize) {
     const R: f32 = 1.456;
-    let axiom = SymbolString(vec![DSym::new_parametric('A', vec![Expr::Const(300.0)])]);
+    let axiom = vec![SymR::new_from_vec('A', vec![300.0]).unwrap()];
 
     let mut system = System::new();
 
     system.add_rule(Rule::new('A', Cond::True,
-                              SymbolString(vec![
-            DSym::new_parametric('F', vec![Expr::Var(0)]),
-            Symbol::new('['),
-            Symbol::new('+'),
-            DSym::new_parametric('A', vec![Expr::Div(box Expr::Var(0), box Expr::Const(R))]),
-            Symbol::new(']'),
-            Symbol::new('['),
-            Symbol::new('-'),
-            DSym::new_parametric('A', vec![Expr::Div(box Expr::Var(0), box Expr::Const(R))]),
-            Symbol::new(']'),
-        ])));
+                              vec![
+            SymExpr::new_from_vec('F', vec![Expr::Var(0)]).unwrap(),
+            SymExpr::new_from_vec('[', vec![]).unwrap(),
+            SymExpr::new_from_vec('+', vec![]).unwrap(),
+            SymExpr::new_from_vec('A', vec![Expr::Div(box Expr::Var(0), box Expr::Const(R))]).unwrap(),
+            SymExpr::new_from_vec(']', vec![]).unwrap(),
+            SymExpr::new_from_vec('[', vec![]).unwrap(),
+            SymExpr::new_from_vec('-', vec![]).unwrap(),
+            SymExpr::new_from_vec('A', vec![Expr::Div(box Expr::Var(0), box Expr::Const(R))]).unwrap(),
+            SymExpr::new_from_vec(']', vec![]).unwrap(),
+        ], 1));
 
     println!("{:?}", system);
 
