@@ -29,7 +29,7 @@ pub struct PSym<Sym: Alphabet, Param: Clone + Debug + PartialEq> {
 
 impl<Sym: Alphabet, Param: Clone + Debug + PartialEq> ParametricSymbol for PSym<Sym, Param> {
     type Sym = Sym;
-   type Param = Param;
+    type Param = Param;
 
     fn symbol(&self) -> &Self::Sym {
         &self.symbol
@@ -60,6 +60,114 @@ impl<Sym: Alphabet, Param: Clone + Debug + PartialEq> ParametricSymbol for PSym<
         }))
     }
 }
+
+#[derive(Debug, PartialEq)]
+pub struct PSym1<Sym: Alphabet, Param: Clone + Debug + PartialEq> {
+    symbol: Sym,
+    params: [Param; 1],
+}
+
+impl<Sym: Alphabet, Param: Clone + Debug + PartialEq> Clone for PSym1<Sym, Param> {
+    fn clone(&self) -> Self {
+        PSym1 {
+            symbol: self.symbol.clone(),
+            params: [self.params[0].clone()],
+        }
+    }
+}
+
+impl<Sym: Alphabet, Param: Clone + Debug + PartialEq> ParametricSymbol for PSym1<Sym, Param> {
+    type Sym = Sym;
+    type Param = Param;
+
+    fn symbol(&self) -> &Self::Sym {
+        &self.symbol
+    }
+    fn symbol_mut(&mut self) -> &mut Self::Sym {
+        &mut self.symbol
+    }
+    fn params(&self) -> &[Self::Param] {
+        &self.params
+    }
+    fn params_mut(&mut self) -> &mut [Self::Param] {
+        &mut self.params
+    }
+
+    fn new_from_result_iter<I, E>(symbol: Self::Sym, mut iter: I) -> Option<Result<Self, E>>
+        where I: Iterator<Item = Result<Self::Param, E>>
+    {
+        let p1 = match iter.next() {
+            Some(Ok(p)) => p,
+            Some(Err(e)) => return Some(Err(e)),
+            None => return None,
+        };
+        if let Some(_) = iter.next() {
+            return None;
+        }
+
+        Some(Ok(PSym1 {
+            symbol: symbol,
+            params: [p1],
+        }))
+    }
+}
+
+#[derive(Debug, PartialEq)]
+pub struct PSym2<Sym: Alphabet, Param: Clone + Debug + PartialEq> {
+    symbol: Sym,
+    params: [Param; 2],
+}
+
+impl<Sym: Alphabet, Param: Clone + Debug + PartialEq> Clone for PSym2<Sym, Param> {
+    fn clone(&self) -> Self {
+        PSym2 {
+            symbol: self.symbol.clone(),
+            params: [self.params[0].clone(), self.params[1].clone()],
+        }
+    }
+}
+
+impl<Sym: Alphabet, Param: Clone + Debug + PartialEq> ParametricSymbol for PSym2<Sym, Param> {
+    type Sym = Sym;
+    type Param = Param;
+
+    fn symbol(&self) -> &Self::Sym {
+        &self.symbol
+    }
+    fn symbol_mut(&mut self) -> &mut Self::Sym {
+        &mut self.symbol
+    }
+    fn params(&self) -> &[Self::Param] {
+        &self.params
+    }
+    fn params_mut(&mut self) -> &mut [Self::Param] {
+        &mut self.params
+    }
+
+    fn new_from_result_iter<I, E>(symbol: Self::Sym, mut iter: I) -> Option<Result<Self, E>>
+        where I: Iterator<Item = Result<Self::Param, E>>
+    {
+        let p1 = match iter.next() {
+            Some(Ok(p)) => p,
+            Some(Err(e)) => return Some(Err(e)),
+            None => return None,
+        };
+        let p2 = match iter.next() {
+            Some(Ok(p)) => p,
+            Some(Err(e)) => return Some(Err(e)),
+            None => return None,
+        };
+        if let Some(_) = iter.next() {
+            return None;
+        }
+
+        Some(Ok(PSym2 {
+            symbol: symbol,
+            params: [p1, p2],
+        }))
+    }
+}
+
 
 #[derive(Debug, Clone)]
 pub struct ParametricRule<Sym, PS, PS2, C>
