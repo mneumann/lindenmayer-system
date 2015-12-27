@@ -1,0 +1,32 @@
+[root]
+name = "lindenmayer-system"
+version = "0.1.0"
+dependencies = [
+ "asexp 0.1.0 (git+https://github.com/mneumann/asexp-rs.git)",
+ "expression 0.1.0 (git+https://github.com/mneumann/expression-rs.git)",
+ "turtle 0.1.0 (git+https://github.com/mneumann/turtle-rs.git)",
+]
+
+[[package]]
+name = "asexp"
+version = "0.1.0"
+source = "git+https://github.com/mneumann/asexp-rs.git#5031783ff1964eeb88c8e03aa63a1c698db2ab6a"
+
+[[package]]
+name = "asexp"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+
+[[package]]
+name = "expression"
+version = "0.1.0"
+source = "git+https://github.com/mneumann/expression-rs.git#5a9d030df8018a93389360dc1fa68d08fb681ff7"
+dependencies = [
+ "asexp 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "turtle"
+version = "0.1.0"
+source = "git+https://github.com/mneumann/turtle-rs.git#2e43cd651b29a27e293605e7a81355565978ed42"
+
