@@ -206,10 +206,10 @@ pub struct PRule<Sym, PS, PS2, C>
           PS2: ParametricSymbol<Sym = Sym, Param = <C::Expr as Expression>::Element>,
           C: Condition
 {
-    symbol: Sym,
-    condition: C,
-    production: Vec<PS>,
-    arity: usize,
+    pub symbol: Sym,
+    pub condition: C,
+    pub production: Vec<PS>,
+    pub arity: usize,
     _marker: PhantomData<PS2>,
 }
 
