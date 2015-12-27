@@ -1,8 +1,17 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use super::Alphabet;
-use super::RuleError;
-use expression::{Expression, Condition};
+use expression::{Expression, Condition, ExpressionError};
+
+#[derive(Debug, Eq, PartialEq)]
+pub enum RuleError {
+    SymbolMismatch,
+    RuleArityMismatch,
+    ArityMismatch,
+    ConditionFalse,
+    ConditionFailed,
+    ExprFailed(ExpressionError),
+}
 
 pub trait ParametricSymbol: Clone + PartialEq + Debug
 {
@@ -182,8 +191,16 @@ impl<Sym: Alphabet, Param: Clone + Debug + PartialEq> ParametricSymbol for PSym2
     }
 }
 
+pub trait ParametricRule: Clone + Debug
+{
+    type InSym: ParametricSymbol;
+    type OutSym: ParametricSymbol;
+
+    fn apply(&self, psym: &Self::OutSym) -> Result<Vec<Self::OutSym>, RuleError>;
+}
+
 #[derive(Debug, Clone)]
-pub struct ParametricRule<Sym, PS, PS2, C>
+pub struct PRule<Sym, PS, PS2, C>
     where Sym: Alphabet,
           PS: ParametricSymbol<Sym = Sym, Param = C::Expr>,
           PS2: ParametricSymbol<Sym = Sym, Param = <C::Expr as Expression>::Element>,
@@ -196,14 +213,14 @@ pub struct ParametricRule<Sym, PS, PS2, C>
     _marker: PhantomData<PS2>,
 }
 
-impl<Sym, PS, PS2, C> ParametricRule<Sym, PS, PS2, C>
+impl<Sym, PS, PS2, C> PRule<Sym, PS, PS2, C>
     where Sym: Alphabet,
           PS: ParametricSymbol<Sym = Sym, Param = C::Expr>,
           PS2: ParametricSymbol<Sym = Sym, Param = <C::Expr as Expression>::Element>,
           C: Condition
 {
-    pub fn new(sym: Sym, cond: C, prod: Vec<PS>, arity: usize) -> ParametricRule<Sym, PS, PS2, C> {
-        ParametricRule {
+    pub fn new(sym: Sym, cond: C, prod: Vec<PS>, arity: usize) -> PRule<Sym, PS, PS2, C> {
+        PRule {
             symbol: sym,
             condition: cond,
             production: prod,
@@ -211,9 +228,19 @@ impl<Sym, PS, PS2, C> ParametricRule<Sym, PS, PS2, C>
             _marker: PhantomData,
         }
     }
+}
+
+impl<Sym, PS, PS2, C> ParametricRule for PRule<Sym, PS, PS2, C>
+    where Sym: Alphabet,
+          PS: ParametricSymbol<Sym = Sym, Param = C::Expr>,
+          PS2: ParametricSymbol<Sym = Sym, Param = <C::Expr as Expression>::Element>,
+          C: Condition
+{
+    type InSym = PS;
+    type OutSym = PS2;
 
     /// Tries to apply the rule and if applicable, produces a successor.
-    pub fn apply(&self, psym: &PS2) -> Result<Vec<PS2>, RuleError> {
+    fn apply(&self, psym: &PS2) -> Result<Vec<PS2>, RuleError> {
         if self.arity != psym.params().len() {
             Err(RuleError::RuleArityMismatch)
         } else if self.symbol.eq(psym.symbol()) {
@@ -256,10 +283,10 @@ fn test_rule_apply() {
     use expression::cond::Cond;
     let expr_s = PSym::new_from_vec('P', vec![NumExpr::Const(123u32)]).unwrap();
 
-    let rule = ParametricRule::<_,
-                                PSym<_, NumExpr<u32>>,
-                                PSym<_, u32>,
-                                _>::new('A', Cond::True, vec![expr_s.clone()], 1);
+    let rule = PRule::<_, PSym<_, NumExpr<u32>>, PSym<_, u32>, _>::new('A',
+                                                                       Cond::True,
+                                                                       vec![expr_s.clone()],
+                                                                       1);
 
     let param_s = PSym::new_from_vec('P', vec![123u32]).unwrap();
     assert_eq!(Err(RuleError::SymbolMismatch), rule.apply(&param_s));
@@ -268,9 +295,9 @@ fn test_rule_apply() {
     let result_s = PSym::new_from_vec('P', vec![123u32]).unwrap();
     assert_eq!(Ok(vec![result_s]), rule.apply(&param_s));
 
-    let rule = ParametricRule::<_,
-                                PSym<_, NumExpr<u32>>,
-                                PSym<_, u32>,
-                                _>::new('A', Cond::False, vec![expr_s.clone()], 1);
+    let rule = PRule::<_, PSym<_, NumExpr<u32>>, PSym<_, u32>, _>::new('A',
+                                                                       Cond::False,
+                                                                       vec![expr_s.clone()],
+                                                                       1);
     assert_eq!(Err(RuleError::ConditionFalse), rule.apply(&param_s));
 }

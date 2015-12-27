@@ -149,9 +149,6 @@ impl<S, C> Rule<S, C>
         let empty: &[<C::Expr as Expression>::Element] = &[];
         let args2: Vec<_> = args.iter().map(|b| b.evaluate(empty).unwrap()).collect();
 
-
-
-
         if self.symbol.eq(sym.symbol()) {
             match self.condition.evaluate(&args2) {
                 Ok(true) => {
