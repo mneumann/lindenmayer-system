@@ -4,6 +4,5 @@ version = "0.1.0"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
 
 [dependencies]
-turtle = { git = "https://github.com/mneumann/turtle-rs.git" }
-#expression = "0.1.0"
-expression = { git = "https://github.com/mneumann/expression-rs.git" }
+turtle = "0.1.1"
+expression = "0.2.0"
