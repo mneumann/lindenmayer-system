@@ -1,5 +1,3 @@
-#![feature(box_syntax)]
-
 extern crate asexp;
 extern crate expression;
 
