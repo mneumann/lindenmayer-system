@@ -1,4 +1,6 @@
 extern crate expression;
+#[cfg(test)]
+extern crate expression_num;
 
 pub mod parametric;
 

@@ -5,8 +5,8 @@ use std::str::FromStr;
 use std::fmt::Debug;
 use lindenmayer_system::parametric::{PSym, PRule, PSystem};
 pub use lindenmayer_system::parametric::{ParametricSymbol, ParametricRule, ParametricSystem};
-pub use expression::num_expr::NumExpr as Expr;
 pub use expression::cond::Cond;
+pub use expression_num::NumExpr as Expr;
 
 pub type Real = f32;
 pub type SymExpr = PSym<char, Expr<Real>>;

@@ -279,7 +279,7 @@ impl<Sym, PS, PS2, C> ParametricRule for PRule<Sym, PS, PS2, C>
 
 #[test]
 fn test_rule_apply() {
-    use expression::num_expr::NumExpr;
+    use expression_num::NumExpr;
     use expression::cond::Cond;
     let expr_s = PSym::new_from_vec('P', vec![NumExpr::Const(123u32)]).unwrap();
 
