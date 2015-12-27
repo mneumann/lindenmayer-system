@@ -1,7 +1,5 @@
-extern crate asexp;
 extern crate expression;
 
-pub mod old;
 pub mod parametric;
 
 use std::fmt::Debug;

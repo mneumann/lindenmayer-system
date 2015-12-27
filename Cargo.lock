@@ -2,15 +2,9 @@
 name = "lindenmayer-system"
 version = "0.1.0"
 dependencies = [
- "asexp 0.1.0 (git+https://github.com/mneumann/asexp-rs.git)",
  "expression 0.1.0 (git+https://github.com/mneumann/expression-rs.git)",
  "turtle 0.1.0 (git+https://github.com/mneumann/turtle-rs.git)",
 ]
-
-[[package]]
-name = "asexp"
-version = "0.1.0"
-source = "git+https://github.com/mneumann/asexp-rs.git#5031783ff1964eeb88c8e03aa63a1c698db2ab6a"
 
 [[package]]
 name = "asexp"
