@@ -301,3 +301,49 @@ fn test_rule_apply() {
                                                                        1);
     assert_eq!(Err(RuleError::ConditionFalse), rule.apply(&param_s));
 }
+
+pub trait ParametricSystem {
+    type Rule: ParametricRule;
+
+    fn apply_first_rule(&self, sym: &<Self::Rule as ParametricRule>::OutSym) -> Option<Vec<<Self::Rule as ParametricRule>::OutSym>>;
+
+    /// Apply in parallel the first matching rule to each symbol in the string.
+    /// Returns the total number of rule applications.
+    fn develop_next(&self, axiom: &Vec<<Self::Rule as ParametricRule>::OutSym>) -> (Vec<<Self::Rule as ParametricRule>::OutSym>, usize) {
+        let mut expanded = Vec::new();
+        let mut rule_applications = 0;
+
+        for sym in axiom.iter() {
+            match self.apply_first_rule(sym) {
+                Some(successor) => {
+                    expanded.extend(successor);
+                    rule_applications += 1;
+                    // XXX: Count rule applications of the matching rule.
+                }
+
+                None => {
+                    expanded.push(sym.clone());
+                }
+            }
+        }
+
+        (expanded, rule_applications)
+    }
+
+    /// Develop the system starting with `axiom` up to `max_iterations`. Return iteration count.
+    fn develop(&self,
+               axiom: Vec<<Self::Rule as ParametricRule>::OutSym>,
+               max_iterations: usize)
+               -> (Vec<<Self::Rule as ParametricRule>::OutSym>, usize) {
+        let mut current = axiom;
+
+        for iter in 0..max_iterations {
+            let (next, rule_applications) = self.develop_next(&current);
+            if rule_applications == 0 {
+                return (current, iter);
+            }
+            current = next;
+        }
+        return (current, max_iterations);
+    }
+}
