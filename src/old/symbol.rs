@@ -1,4 +1,4 @@
-use super::{Alphabet, Symbol};
+use super::{Symbol, Alphabet};
 use expression::Expression;
 use std::fmt;
 

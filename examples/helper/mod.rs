@@ -2,8 +2,8 @@ use turtle::{Canvas, Turtle};
 use std::fs::File;
 use std::env;
 use std::str::FromStr;
-pub use lindenmayer_system::{SymbolString, Rule, System, LSystem, Symbol};
-pub use lindenmayer_system::symbol::DSym;
+pub use lindenmayer_system::old::{SymbolString, Rule, System, LSystem, Symbol};
+pub use lindenmayer_system::old::symbol::DSym;
 pub use expression::num_expr::NumExpr as Expr;
 pub use expression::cond::Cond;
 
