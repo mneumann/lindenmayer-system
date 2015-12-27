@@ -3,6 +3,11 @@ name = "lindenmayer-system"
 version = "0.1.0"
 authors = ["Michael Neumann <mneumann@ntecs.de>"]
 
+license = "MIT"
+repository = "https://github.com/mneumann/lindenmayer-system"
+description = "Parametric Lindenmayer-Systems"
+keywords = ["l-system", "lsystem", "grammar", "lindemayer"]
+
 [dependencies]
 turtle = "0.1.1"
 expression = "0.3.0"
