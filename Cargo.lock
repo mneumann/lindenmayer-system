@@ -20,7 +20,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 [[package]]
 name = "expression"
 version = "0.1.0"
-source = "git+https://github.com/mneumann/expression-rs.git#5a9d030df8018a93389360dc1fa68d08fb681ff7"
+source = "git+https://github.com/mneumann/expression-rs.git#db23b9ec7387b6b5e7caf880e5ef95eb49789a45"
 dependencies = [
  "asexp 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

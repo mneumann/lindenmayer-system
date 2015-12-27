@@ -19,6 +19,20 @@ pub trait ParametricSymbol: Clone + PartialEq + Debug
     /// number of parameters, return None.
     fn new_from_result_iter<I, E>(symbol: Self::Sym, iter: I) -> Option<Result<Self, E>>
         where I: Iterator<Item = Result<Self::Param, E>>;
+
+    fn new_from_iter<I>(symbol: Self::Sym, iter: I) -> Option<Self>
+        where I: Iterator<Item = Self::Param>
+    {
+        match Self::new_from_result_iter::<_, ()>(symbol, iter.map(|i| Ok(i))) {
+            Some(Ok(res)) => Some(res),
+            Some(Err(())) => panic!(),
+            None => None,
+        }
+    }
+
+    fn new_from_vec(symbol: Self::Sym, vec: Vec<Self::Param>) -> Option<Self> {
+        Self::new_from_iter(symbol, vec.into_iter())
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -168,7 +182,6 @@ impl<Sym: Alphabet, Param: Clone + Debug + PartialEq> ParametricSymbol for PSym2
     }
 }
 
-
 #[derive(Debug, Clone)]
 pub struct ParametricRule<Sym, PS, PS2, C>
     where Sym: Alphabet,
@@ -179,6 +192,7 @@ pub struct ParametricRule<Sym, PS, PS2, C>
     symbol: Sym,
     condition: C,
     production: Vec<PS>,
+    arity: usize,
     _marker: PhantomData<PS2>,
 }
 
@@ -188,9 +202,21 @@ impl<Sym, PS, PS2, C> ParametricRule<Sym, PS, PS2, C>
           PS2: ParametricSymbol<Sym = Sym, Param = <C::Expr as Expression>::Element>,
           C: Condition
 {
+    pub fn new(sym: Sym, cond: C, prod: Vec<PS>, arity: usize) -> ParametricRule<Sym, PS, PS2, C> {
+        ParametricRule {
+            symbol: sym,
+            condition: cond,
+            production: prod,
+            arity: arity,
+            _marker: PhantomData,
+        }
+    }
+
     /// Tries to apply the rule and if applicable, produces a successor.
-    pub fn apply(&self, psym: &PS) -> Result<Vec<PS2>, RuleError> {
-        if self.symbol.eq(psym.symbol()) {
+    pub fn apply(&self, psym: &PS2) -> Result<Vec<PS2>, RuleError> {
+        if self.arity != psym.params().len() {
+            Err(RuleError::RuleArityMismatch)
+        } else if self.symbol.eq(psym.symbol()) {
             match self.condition.evaluate(psym.params()) {
                 Ok(true) => {
                     let mut new_symbol_string = Vec::with_capacity(self.production.len());
@@ -222,4 +248,29 @@ impl<Sym, PS, PS2, C> ParametricRule<Sym, PS, PS2, C>
             Err(RuleError::SymbolMismatch)
         }
     }
+}
+
+#[test]
+fn test_rule_apply() {
+    use expression::num_expr::NumExpr;
+    use expression::cond::Cond;
+    let expr_s = PSym::new_from_vec('P', vec![NumExpr::Const(123u32)]).unwrap();
+
+    let rule = ParametricRule::<_,
+                                PSym<_, NumExpr<u32>>,
+                                PSym<_, u32>,
+                                _>::new('A', Cond::True, vec![expr_s.clone()], 1);
+
+    let param_s = PSym::new_from_vec('P', vec![123u32]).unwrap();
+    assert_eq!(Err(RuleError::SymbolMismatch), rule.apply(&param_s));
+
+    let param_s = PSym::new_from_vec('A', vec![123u32]).unwrap();
+    let result_s = PSym::new_from_vec('P', vec![123u32]).unwrap();
+    assert_eq!(Ok(vec![result_s]), rule.apply(&param_s));
+
+    let rule = ParametricRule::<_,
+                                PSym<_, NumExpr<u32>>,
+                                PSym<_, u32>,
+                                _>::new('A', Cond::False, vec![expr_s.clone()], 1);
+    assert_eq!(Err(RuleError::ConditionFalse), rule.apply(&param_s));
 }

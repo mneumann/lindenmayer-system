@@ -47,11 +47,15 @@ pub trait Symbol: Clone + PartialEq + fmt::Debug {
     }
 
     fn evaluate(&self, bindings: &[Self::Expr]) -> Result<Self, ExpressionError> {
+        // XXX
+        let empty: &[<Self::Expr as Expression>::Element] = &[];
+        let binds: Vec<_> = bindings.iter().map(|b| b.evaluate(empty).unwrap()).collect();
+
         Self::from_result_iter((*self.symbol()).clone(),
                                self.args()
                                    .iter()
                                    .map(|expr| {
-                                       expr.evaluate(bindings).map(|ok| Self::Expr::make_const(ok))
+                                       expr.evaluate(&binds).map(|ok| Self::Expr::make_const(ok))
                                    }))
 
     }
@@ -107,6 +111,7 @@ impl<S: Symbol> SymbolString<S> {
 #[derive(Debug, Eq, PartialEq)]
 pub enum RuleError {
     SymbolMismatch,
+    RuleArityMismatch,
     ArityMismatch,
     ConditionFalse,
     ConditionFailed,
@@ -139,8 +144,16 @@ impl<S, C> Rule<S, C>
     /// a successor.
     pub fn apply(&self, sym: &S) -> Result<SymbolString<S>, RuleError> {
         let args = sym.args();
+
+        // XXX
+        let empty: &[<C::Expr as Expression>::Element] = &[];
+        let args2: Vec<_> = args.iter().map(|b| b.evaluate(empty).unwrap()).collect();
+
+
+
+
         if self.symbol.eq(sym.symbol()) {
-            match self.condition.evaluate(args) {
+            match self.condition.evaluate(&args2) {
                 Ok(true) => {
                     match self.successor.evaluate(args) {
                         Ok(symstr) => Ok(symstr),
