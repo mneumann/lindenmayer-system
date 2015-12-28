@@ -1,7 +1,8 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
-use super::Alphabet;
+use super::{Alphabet, DualAlphabet};
 use expression::{Expression, Condition, ExpressionError};
+use std::collections::BTreeMap;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum RuleError {
@@ -395,5 +396,60 @@ impl<R> ParametricSystem for PSystem<R> where R: ParametricRule
     /// Apply first matching rule and return expanded successor.
     fn apply_first_rule(&self, sym: &<Self::Rule as ParametricRule>::OutSym) -> Option<Vec<<Self::Rule as ParametricRule>::OutSym>> {
         apply_first_rule(&self.rules, sym)
+    }
+}
+
+
+/// Distinguishes between terminal symbols and non-terminals.  Rules are only allowed on
+/// non-terminals.
+#[derive(Debug, Clone)]
+pub struct PDualMapSystem<A, R>
+    where
+          A: DualAlphabet,
+          R: ParametricRule,
+          <R as ParametricRule>::InSym: ParametricSymbol<Sym=A>,
+          <R as ParametricRule>::OutSym: ParametricSymbol<Sym=A>,
+{
+    rules: BTreeMap<A::NonTerminal, Vec<R>>,
+}
+
+impl<A, R>  PDualMapSystem<A, R>
+    where
+          A: DualAlphabet,
+          R: ParametricRule,
+          <R as ParametricRule>::InSym: ParametricSymbol<Sym=A>,
+          <R as ParametricRule>::OutSym: ParametricSymbol<Sym=A>,
+{
+    pub fn new() -> PDualMapSystem<A,R> {
+        PDualMapSystem {
+            rules: BTreeMap::new()
+        }
+    }
+
+    pub fn add_rule(&mut self, rule: R) {
+        assert!(rule.symbol().nonterminal().is_some());
+    }
+}
+
+impl<A, R> ParametricSystem for PDualMapSystem<A, R>
+    where
+          A: DualAlphabet,
+          R: ParametricRule,
+          <R as ParametricRule>::InSym: ParametricSymbol<Sym=A>,
+          <R as ParametricRule>::OutSym: ParametricSymbol<Sym=A>,
+{
+    type Rule = R;
+
+    fn apply_first_rule(&self, sym: &<Self::Rule as ParametricRule>::OutSym) -> Option<Vec<<Self::Rule as ParametricRule>::OutSym>> {
+        match sym.symbol().nonterminal()
+        {
+            // We don't store rules for terminal symbols.
+            None => None,
+
+            // Only apply rules for non-terminals
+            Some(id) => {
+                self.rules.get(&id).and_then(|rules| apply_first_rule(&rules[..], sym))
+            }
+        }
     }
 }
