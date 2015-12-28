@@ -423,10 +423,17 @@ impl<A, Rule> PDualMapSystem<A, Rule>
         PDualMapSystem { rules: BTreeMap::new() }
     }
 
-    pub fn add_rule(&mut self, rule: Rule) {
-        assert!(rule.symbol().nonterminal().is_some());
+    pub fn add_rule(&mut self, rule: Rule) -> bool {
+        let rule_id = match rule.symbol().nonterminal() {
+            Some(nt) => nt.clone(),
+            None => return false,
+        };
+        self.rules
+            .entry(rule_id)
+            .or_insert(vec![])
+            .push(rule);
+        return true;
     }
-
 
     fn random_rule_id<R: Rng>(&self, rng: &mut R) -> Option<&<A as DualAlphabet>::NonTerminal> {
         let len = self.rules.len();
@@ -490,7 +497,7 @@ impl<A, R> ParametricSystem for PDualMapSystem<A, R>
             None => None,
 
             // Only apply rules for non-terminals
-            Some(id) => self.rules.get(&id).and_then(|rules| apply_first_rule(&rules[..], sym)),
+            Some(id) => self.rules.get(id).and_then(|rules| apply_first_rule(&rules[..], sym)),
         }
     }
 }
