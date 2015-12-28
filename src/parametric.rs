@@ -404,26 +404,22 @@ impl<R> ParametricSystem for PSystem<R> where R: ParametricRule
 /// non-terminals.
 #[derive(Debug, Clone)]
 pub struct PDualMapSystem<A, R>
-    where
-          A: DualAlphabet,
+    where A: DualAlphabet,
           R: ParametricRule,
-          <R as ParametricRule>::InSym: ParametricSymbol<Sym=A>,
-          <R as ParametricRule>::OutSym: ParametricSymbol<Sym=A>,
+          <R as ParametricRule>::InSym: ParametricSymbol<Sym = A>,
+          <R as ParametricRule>::OutSym: ParametricSymbol<Sym = A>
 {
     rules: BTreeMap<A::NonTerminal, Vec<R>>,
 }
 
-impl<A, R>  PDualMapSystem<A, R>
-    where
-          A: DualAlphabet,
+impl<A, R> PDualMapSystem<A, R>
+    where A: DualAlphabet,
           R: ParametricRule,
-          <R as ParametricRule>::InSym: ParametricSymbol<Sym=A>,
-          <R as ParametricRule>::OutSym: ParametricSymbol<Sym=A>,
+          <R as ParametricRule>::InSym: ParametricSymbol<Sym = A>,
+          <R as ParametricRule>::OutSym: ParametricSymbol<Sym = A>
 {
-    pub fn new() -> PDualMapSystem<A,R> {
-        PDualMapSystem {
-            rules: BTreeMap::new()
-        }
+    pub fn new() -> PDualMapSystem<A, R> {
+        PDualMapSystem { rules: BTreeMap::new() }
     }
 
     pub fn add_rule(&mut self, rule: R) {
@@ -432,24 +428,20 @@ impl<A, R>  PDualMapSystem<A, R>
 }
 
 impl<A, R> ParametricSystem for PDualMapSystem<A, R>
-    where
-          A: DualAlphabet,
+    where A: DualAlphabet,
           R: ParametricRule,
-          <R as ParametricRule>::InSym: ParametricSymbol<Sym=A>,
-          <R as ParametricRule>::OutSym: ParametricSymbol<Sym=A>,
+          <R as ParametricRule>::InSym: ParametricSymbol<Sym = A>,
+          <R as ParametricRule>::OutSym: ParametricSymbol<Sym = A>
 {
     type Rule = R;
 
     fn apply_first_rule(&self, sym: &<Self::Rule as ParametricRule>::OutSym) -> Option<Vec<<Self::Rule as ParametricRule>::OutSym>> {
-        match sym.symbol().nonterminal()
-        {
+        match sym.symbol().nonterminal() {
             // We don't store rules for terminal symbols.
             None => None,
 
             // Only apply rules for non-terminals
-            Some(id) => {
-                self.rules.get(&id).and_then(|rules| apply_first_rule(&rules[..], sym))
-            }
+            Some(id) => self.rules.get(&id).and_then(|rules| apply_first_rule(&rules[..], sym)),
         }
     }
 }
