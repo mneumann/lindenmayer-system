@@ -197,6 +197,8 @@ pub trait ParametricRule: Clone + Debug
     type OutSym: ParametricSymbol;
 
     fn apply(&self, psym: &Self::OutSym) -> Result<Vec<Self::OutSym>, RuleError>;
+
+    fn symbol(&self) -> &<Self::InSym as ParametricSymbol>::Sym;
 }
 
 #[derive(Debug, Clone)]
@@ -274,6 +276,10 @@ impl<Sym, PS, PS2, C> ParametricRule for PRule<Sym, PS, PS2, C>
         } else {
             Err(RuleError::SymbolMismatch)
         }
+    }
+
+    fn symbol(&self) -> &<Self::InSym as ParametricSymbol>::Sym {
+        &self.symbol
     }
 }
 
