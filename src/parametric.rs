@@ -481,6 +481,17 @@ impl<A, Rule> PDualMapSystem<A, Rule>
 
         callback(rng, None);
     }
+
+    /// Calls the callback for each rule in the system.
+    pub fn each_rule<F>(&self, mut callback: F)
+        where F: FnMut(&Rule)
+    {
+        for (_rule_id, vec_rules) in self.rules.iter() {
+            for rule in vec_rules.iter() {
+                callback(rule);
+            }
+        }
+    }
 }
 
 impl<A, R> ParametricSystem for PDualMapSystem<A, R>
