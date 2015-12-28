@@ -1,4 +1,5 @@
 extern crate expression;
+extern crate rand;
 #[cfg(test)]
 extern crate expression_num;
 

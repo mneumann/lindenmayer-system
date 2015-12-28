@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use super::{Alphabet, DualAlphabet};
 use expression::{Expression, Condition, ExpressionError};
 use std::collections::BTreeMap;
+use rand::Rng;
 
 #[derive(Debug, Eq, PartialEq)]
 pub enum RuleError {
@@ -412,18 +413,66 @@ pub struct PDualMapSystem<A, R>
     rules: BTreeMap<A::NonTerminal, Vec<R>>,
 }
 
-impl<A, R> PDualMapSystem<A, R>
+impl<A, Rule> PDualMapSystem<A, Rule>
     where A: DualAlphabet,
-          R: ParametricRule,
-          <R as ParametricRule>::InSym: ParametricSymbol<Sym = A>,
-          <R as ParametricRule>::OutSym: ParametricSymbol<Sym = A>
+          Rule: ParametricRule,
+          <Rule as ParametricRule>::InSym: ParametricSymbol<Sym = A>,
+          <Rule as ParametricRule>::OutSym: ParametricSymbol<Sym = A>
 {
-    pub fn new() -> PDualMapSystem<A, R> {
+    pub fn new() -> PDualMapSystem<A, Rule> {
         PDualMapSystem { rules: BTreeMap::new() }
     }
 
-    pub fn add_rule(&mut self, rule: R) {
+    pub fn add_rule(&mut self, rule: Rule) {
         assert!(rule.symbol().nonterminal().is_some());
+    }
+
+
+    fn random_rule_id<R: Rng>(&self, rng: &mut R) -> Option<&<A as DualAlphabet>::NonTerminal> {
+        let len = self.rules.len();
+        if len > 0 {
+            let nth = rng.gen_range(0, len);
+            self.rules.iter().map(|(k, _)| k).nth(nth)
+        } else {
+            None
+        }
+    }
+
+    pub fn with_random_rule<R, F>(&self, rng: &mut R, mut callback: F)
+        where R: Rng,
+              F: FnMut(&mut R, Option<&Rule>)
+    {
+        if let Some(rule_id) = self.random_rule_id(rng) {
+            if let Some(local_rules) = self.rules.get(rule_id) {
+                let len = local_rules.len();
+                if len > 0 {
+                    let idx = rng.gen_range(0, len);
+                    callback(rng, Some(&local_rules[idx]));
+                    return;
+                }
+            }
+        }
+
+        callback(rng, None);
+    }
+
+    pub fn with_random_rule_mut<R, F>(&mut self, rng: &mut R, mut callback: F)
+        where R: Rng,
+              F: FnMut(&mut R, Option<&mut Rule>)
+    {
+        let opt_rule_id = self.random_rule_id(rng).map(|id| id.clone());
+        if let Some(rule_id) = opt_rule_id {
+            if let Some(local_rules) = self.rules.get_mut(&rule_id) {
+                let len = local_rules.len();
+                if len > 0 {
+                    let idx = rng.gen_range(0, len);
+                    callback(rng, Some(&mut local_rules[idx]));
+                    return;
+                }
+            }
+        }
+
+        callback(rng, None);
     }
 }
 
