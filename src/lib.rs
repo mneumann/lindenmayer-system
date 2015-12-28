@@ -16,3 +16,13 @@ impl Alphabet for u16 {}
 impl Alphabet for u32 {}
 impl Alphabet for u64 {}
 impl Alphabet for usize {}
+
+/// An alphabet that distinguishes between terminal
+/// and non-terminal symbols.
+pub trait DualAlphabet: Alphabet {
+    type Terminal: Alphabet;
+    type NonTerminal: Alphabet;
+
+    fn nonterminal(&self) -> Option<Self::NonTerminal>;
+    fn terminal(&self) -> Option<Self::Terminal>;
+}
