@@ -15,7 +15,7 @@ fn koch_curve(maxiter: usize) {
 
     let (after, iters) = system.develop(axiom, maxiter);
 
-    draw(&after, -90.0, 60.0, 10.0, &format!("koch_{:02}", iters));
+    draw(&after, 90.0, 60.0, 10.0, &format!("koch_{:02}", iters));
 }
 
 fn main() {
