@@ -15,7 +15,6 @@ fn dragon_curve(maxiter: usize) {
     draw(&after, 0.0, 90.0, 10.0, &format!("dragon_{:02}", iters));
 }
 
-
 fn main() {
     dragon_curve(num_iterations());
 }

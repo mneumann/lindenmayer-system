@@ -18,11 +18,13 @@ fn sierpinski(maxiter: usize) {
     system.add_rule(rule('B', "F"));
     let (after, _iters) = system.develop_next(&after);
 
-    draw(&after,
-         -90.0,
-         60.0,
-         10.0,
-         &format!("sierpinski_{:02}", iters));
+    draw(
+        &after,
+        -90.0,
+        60.0,
+        10.0,
+        &format!("sierpinski_{:02}", iters),
+    );
 }
 
 fn main() {

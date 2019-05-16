@@ -8,18 +8,30 @@ fn branching_pattern_abop_1_9(maxiter: usize) {
 
     let mut system = System::new();
 
-    system.add_rule(Rule::new('A', Cond::True,
-                              vec![
+    system.add_rule(Rule::new(
+        'A',
+        Cond::True,
+        vec![
             SymExpr::new_from_vec('F', vec![Expr::Var(0)]).unwrap(),
             SymExpr::new_from_vec('[', vec![]).unwrap(),
             SymExpr::new_from_vec('+', vec![]).unwrap(),
-            SymExpr::new_from_vec('A', vec![Expr::Div(Box::new(Expr::Var(0)), Box::new(Expr::Const(R)))]).unwrap(),
+            SymExpr::new_from_vec(
+                'A',
+                vec![Expr::Div(Box::new(Expr::Var(0)), Box::new(Expr::Const(R)))],
+            )
+            .unwrap(),
             SymExpr::new_from_vec(']', vec![]).unwrap(),
             SymExpr::new_from_vec('[', vec![]).unwrap(),
             SymExpr::new_from_vec('-', vec![]).unwrap(),
-            SymExpr::new_from_vec('A', vec![Expr::Div(Box::new(Expr::Var(0)), Box::new(Expr::Const(R)))]).unwrap(),
+            SymExpr::new_from_vec(
+                'A',
+                vec![Expr::Div(Box::new(Expr::Var(0)), Box::new(Expr::Const(R)))],
+            )
+            .unwrap(),
             SymExpr::new_from_vec(']', vec![]).unwrap(),
-        ], 1));
+        ],
+        1,
+    ));
 
     println!("{:?}", system);
 

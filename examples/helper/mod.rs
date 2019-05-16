@@ -1,12 +1,12 @@
-use turtle_graphics::{Canvas, Turtle};
-use std::fs::File;
-use std::env;
-use std::str::FromStr;
-use std::fmt::Debug;
-use lindenmayer_system::parametric::{PSym, PRule, PSystem};
-pub use lindenmayer_system::parametric::{ParametricSymbol, ParametricRule, ParametricSystem};
 pub use expression::cond::Cond;
 pub use expression_num::NumExpr as Expr;
+use lindenmayer_system::parametric::{PRule, PSym, PSystem};
+pub use lindenmayer_system::parametric::{ParametricRule, ParametricSymbol, ParametricSystem};
+use std::env;
+use std::fmt::Debug;
+use std::fs::File;
+use std::str::FromStr;
+use turtle_graphics::{Canvas, Turtle};
 
 pub type Real = f32;
 pub type SymExpr = PSym<char, Expr<Real>>;
@@ -18,11 +18,13 @@ pub fn num_iterations() -> usize {
     usize::from_str(&env::args().nth(1).unwrap_or("0".to_string())).unwrap()
 }
 
-pub fn draw(symstr: &[SymR],
-            init_direction: f32,
-            default_angle: f32,
-            default_distance: f32,
-            filename: &str) {
+pub fn draw(
+    symstr: &[SymR],
+    init_direction: f32,
+    default_angle: f32,
+    default_distance: f32,
+    filename: &str,
+) {
     let mut t = Canvas::new();
     t.right(init_direction);
     for sym in symstr.iter() {
@@ -44,19 +46,22 @@ pub fn draw(symstr: &[SymR],
             _ => {}
         }
     }
-    t.save_svg(&mut File::create(filename.to_string() + ".svg").unwrap()).unwrap();
-    t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap()).unwrap();
+    t.save_svg(&mut File::create(filename.to_string() + ".svg").unwrap())
+        .unwrap();
+    t.save_eps(&mut File::create(filename.to_string() + ".eps").unwrap())
+        .unwrap();
 }
 
 #[allow(dead_code)]
 pub fn symstr<S, R>(s: &str) -> Vec<S>
-    where S: ParametricSymbol<Sym = char, Param = R>,
-          R: Clone + Debug + PartialEq
+where
+    S: ParametricSymbol<Sym = char, Param = R>,
+    R: Clone + Debug + PartialEq,
 {
     s.chars()
-     .filter(|&c| !c.is_whitespace())
-     .map(|c| S::new_from_vec(c, vec![]).unwrap())
-     .collect()
+        .filter(|&c| !c.is_whitespace())
+        .map(|c| S::new_from_vec(c, vec![]).unwrap())
+        .collect()
 }
 
 #[allow(dead_code)]
