@@ -1,9 +1,3 @@
-#![feature(box_syntax)]
-
-extern crate lindenmayer_system;
-extern crate turtle;
-extern crate expression;
-extern crate expression_num;
 mod helper;
 
 use helper::*;
@@ -19,11 +13,11 @@ fn branching_pattern_abop_1_9(maxiter: usize) {
             SymExpr::new_from_vec('F', vec![Expr::Var(0)]).unwrap(),
             SymExpr::new_from_vec('[', vec![]).unwrap(),
             SymExpr::new_from_vec('+', vec![]).unwrap(),
-            SymExpr::new_from_vec('A', vec![Expr::Div(box Expr::Var(0), box Expr::Const(R))]).unwrap(),
+            SymExpr::new_from_vec('A', vec![Expr::Div(Box::new(Expr::Var(0)), Box::new(Expr::Const(R)))]).unwrap(),
             SymExpr::new_from_vec(']', vec![]).unwrap(),
             SymExpr::new_from_vec('[', vec![]).unwrap(),
             SymExpr::new_from_vec('-', vec![]).unwrap(),
-            SymExpr::new_from_vec('A', vec![Expr::Div(box Expr::Var(0), box Expr::Const(R))]).unwrap(),
+            SymExpr::new_from_vec('A', vec![Expr::Div(Box::new(Expr::Var(0)), Box::new(Expr::Const(R)))]).unwrap(),
             SymExpr::new_from_vec(']', vec![]).unwrap(),
         ], 1));
 

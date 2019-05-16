@@ -1,7 +1,3 @@
-extern crate lindenmayer_system;
-extern crate turtle;
-extern crate expression;
-extern crate expression_num;
 mod helper;
 
 use helper::*;

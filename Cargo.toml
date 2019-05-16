@@ -7,11 +7,12 @@ license = "MIT"
 repository = "https://github.com/mneumann/lindenmayer-system"
 description = "Parametric Lindenmayer-Systems"
 keywords = ["l-system", "lsystem", "grammar", "lindemayer"]
+edition = "2018"
 
 [dependencies]
-turtle = "0.1.1"
-expression = "0.3.0"
+turtle-graphics = "0.1.2"
+expression = "0.3.4"
 rand = "0.3"
 
 [dev-dependencies]
-expression-num = "0.1.0"
+expression-num = "0.2.3"

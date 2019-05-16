@@ -1,4 +1,4 @@
-use turtle::{Canvas, Turtle};
+use turtle_graphics::{Canvas, Turtle};
 use std::fs::File;
 use std::env;
 use std::str::FromStr;
